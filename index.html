@@ -168,7 +168,7 @@ async function savePrefs(){try{await api('/api/prefs',{name:S.cfg.name,hour:+v('
 async function mkInv(){try{ST.inv=(await api('/api/family/invite',{})).code}catch(x){ST.msg='產生失敗'}render()}
 async function joinFam(){try{await api('/api/family/join',{code:v('j_c').trim()});S.sync.since=0;ST.msg='已加入家庭!';await sync();loadMe();return}catch(x){ST.msg=x.message}render()}
 function setApi(){S.sync.api=v('s_api').trim();raw();render()}
-function unlink(){if(confirm('中斷這台裝置的連線?資料仍保留在本機。')){S.sync={api:S.sync.api,token:'',since:0,h:{}};ST={};raw();render()}}
+function unlink(){if(confirm('中斷連線並清除後端網址?資料仍保留在本機。')){S.sync={api:'',token:'',since:0,h:{}};ST={};raw();render()}}
 const cloud=()=>{const y=S.sync,m=ST.me;let h='<div class="card"><h2>☁️ 雲端同步與 Telegram</h2>';
  if(!y.api)h+='<div class="mu">貼上後端網址(部署 Worker 後取得)</div><div class="row"><input id="s_api" placeholder="https://life-api.xxx.workers.dev"><button class="s" onclick="setApi()">儲存</button></div>';
  else if(!y.token)h+='<button onclick="startPair()">連結 Telegram</button>';
