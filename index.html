@@ -2,6 +2,7 @@
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>小日子 生活記錄</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#ff8fa3"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);--bg:#fff3ee;--card:#fff;--ac:#ff8fa3;--ac2:#ffe0e6;--tx:#5a3d44;--mu:#a58a90;--ok:#6bbf94;--r:18px}
 :root[data-theme=milk]{--bg:#f6ede3;--ac:#c49a6c;--ac2:#efdfcc;--tx:#4e3d2e;--mu:#9b8670}
@@ -204,5 +205,5 @@ function render(){const m=S.cfg.mods;if(tab==='set'&&S.sync.token&&!ST.me&&!ST.c
  if(!T.find(x=>x[0]===tab))tab='main';
  $('nav').innerHTML=T.map(([k,i,n])=>`<a class="${tab===k?'on':''}" onclick="tab='${k}';render()"><b>${i}</b>${n}</a>`).join('');
  $('app').innerHTML={main:pMain,fin:pFin,home:pHome,health:pHealth,set:pSet}[tab]()}
-tab='main';render();sync();document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});tab='main';render();sync();document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 </script></body></html>
