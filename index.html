@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>小日子 生活記錄</title>
@@ -40,10 +40,10 @@ const IC=Object.fromEntries(OUT.concat([['收入','💰']]));
 const ICAT=['清潔','衛浴','廚房','保健品','食品','其他'];
 const EMO=['🍜','🧋','☕','🍰','🛒','👕','📚','🎁','🐶','🐱','✈️','💡','🧼','🥬','🪥','💄','🧸','🏋️','🧾','🎬','🚗','🌸'];
 const THEMES=[['peach','蜜桃粉'],['milk','奶茶色'],['mint','薄荷綠'],['sky','天空藍'],['lavender','薰衣草'],['lemon','檸檬黃'],['night','夜空紫'],['cocoa','可可棕']];
-const DEF={cfg:{mods:{fin:1,home:1,health:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px'},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
+const DEF={cfg:{mods:{fin:1,home:1,health:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px'},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
 function load(){try{const s=JSON.parse(localStorage.getItem('lifeapp'));if(s){const D=JSON.parse(JSON.stringify(DEF));return {...D,...s,cfg:{...D.cfg,...s.cfg,mods:{...D.cfg.mods,...s.cfg.mods}}}}}catch(x){}return JSON.parse(JSON.stringify(DEF))}
 let S=load(),tab='home',view='all';
-const save=()=>{try{localStorage.setItem('lifeapp',JSON.stringify(S))}catch(x){}};
+let tmr,busy=0,ST={};const raw=()=>{try{localStorage.setItem('lifeapp',JSON.stringify(S))}catch(x){}};const save=()=>{raw();clearTimeout(tmr);tmr=setTimeout(sync,2500)};
 const uid=()=>Math.random().toString(36).slice(2,9);
 const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
 const money=n=>'$'+Math.round(n).toLocaleString();
@@ -137,6 +137,49 @@ function pHealth(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
  <div class="card"><h2>我的小目標(可不填)</h2><div class="row"><input id="g_f" type="number" placeholder="目前 kg" value="${e(g.from)}"><input id="g_t" type="number" placeholder="目標 kg" value="${e(g.to)}"><input id="g_d" type="date" value="${e(g.date)}"></div><button class="g" style="margin-top:8px" onclick="saveGoal()">設定</button><div class="mu" style="margin-top:6px">這只是陪伴參考,不是考試。減重有疑慮請諮詢醫師或營養師。</div></div>
  <div class="card"><h2>最近紀錄</h2>${L.slice(-7).reverse().map(x=>`<div class="li"><span>${x.d.slice(5)} ${x.mood||''}</span><span class="mu">${x.w?x.w+'kg ':''}${x.water?'💧'+x.water+' ':''}${x.sleep?'😴'+x.sleep+'h ':''}${x.ex?'🏃'+x.ex+'分':''}</span></div>`).join('')||'<div class="mu">還沒有紀錄</div>'}</div>`}
 
+/* ---------- cloud sync ---------- */
+const hs=o=>{const t=JSON.stringify(o);let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))>>>0;return h};
+async function api(path,body){const y=S.sync,r=await fetch(y.api.replace(/\/$/,'')+path,{method:body?'POST':'GET',headers:{'content-type':'application/json',authorization:'Bearer '+y.token},body:body?JSON.stringify(body):undefined});
+ if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);return r.json()}
+const docs=()=>{const c={};S.tx.forEach(t=>c['tx:'+t.id]={scope:t.scope,data:t});S.items.forEach(i=>c['item:'+i.id]={scope:'s',data:i});S.log.forEach(l=>c['log:'+l.d]={scope:'p',data:l});c.cfg={scope:'p',data:{cfg:S.cfg,mem:S.mem,cats:S.cats}};return c};
+function ap(res,y){let n=0;const c=docs(),ks=[];
+ for(const d of res.docs){const k=d.k,i=k.indexOf(':'),t=k.slice(0,i),id=k.slice(i+1);
+  if(k==='cfg'){if(!d.del){if(hs(d.data)!==hs(c.cfg.data)){Object.assign(S.cfg,d.data.cfg);S.mem=d.data.mem;S.cats=d.data.cats;n++}ks.push(k)}continue}
+  const L={tx:S.tx,item:S.items,log:S.log}[t];if(!L)continue;const f=t==='log'?'d':'id',j=L.findIndex(x=>x[f]===id);
+  if(d.del){if(j>=0){L.splice(j,1);n++}delete y.h[k]}
+  else if(j<0){L.push(d.data);n++;ks.push(k)}
+  else{if(hs(d.data)!==hs(L[j])){L[j]=d.data;n++}ks.push(k)}}
+ S.tx.sort((a,b)=>a.d<b.d?1:-1);
+ const c2=docs();ks.forEach(k=>{if(c2[k])y.h[k]=[hs(c2[k].data),c2[k].scope]});y.since=res.now-5000;return n}
+async function sync(){const y=S.sync;if(!y.token||!y.api||busy)return;busy=1;let n=0;
+ try{if(!y.since)n+=ap(await api('/api/sync',{since:0,docs:[]}),y);
+  const c=docs(),now=Date.now(),push=[];
+  for(const k in c){const h=hs(c[k].data);if(!y.h[k]||y.h[k][0]!==h)push.push({k,scope:c[k].scope,data:c[k].data,u:now,h})}
+  for(const k in y.h)if(!(k in c))push.push({k,del:1,scope:y.h[k][1],u:now});
+  for(let i=0;i<Math.max(1,push.length);i+=100){const ch=push.slice(i,i+100);
+   const r=await api('/api/sync',{since:y.since,docs:ch.map(({h,...d})=>d)});
+   ch.forEach(d=>{if(d.del)delete y.h[d.k];else y.h[d.k]=[d.h,d.scope]});n+=ap(r,y)}
+  ST.msg=''}catch(x){ST.msg='同步失敗:'+x.message}
+ busy=0;raw();if(n)render()}
+async function startPair(){try{const y=S.sync,r=await fetch(y.api.replace(/\/$/,'')+'/api/pair',{method:'POST'}).then(r=>r.json());y.token=r.token;ST={code:r.code,bot:r.bot};raw();render();poll()}catch(x){ST.msg='連線失敗,請確認後端網址';render()}}
+async function poll(){if(!ST.code)return;try{const m=await api('/api/me');if(m.bound){ST={};raw();sync();render();return}}catch(x){if(String(x.message)==='auth'){S.sync.token='';ST={msg:'配對碼已過期,請重新連結'};raw();render();return}}setTimeout(poll,3000)}
+async function loadMe(){ST.me={};try{ST.me=await api('/api/me')}catch(x){ST.me={err:1}}render()}
+async function savePrefs(){try{await api('/api/prefs',{name:S.cfg.name,hour:+v('r_h'),stock:$('r_s').checked,health:$('r_hh').checked,fin:$('r_f').checked});ST.msg='已儲存提醒設定'}catch(x){ST.msg='儲存失敗'}loadMe()}
+async function mkInv(){try{ST.inv=(await api('/api/family/invite',{})).code}catch(x){ST.msg='產生失敗'}render()}
+async function joinFam(){try{await api('/api/family/join',{code:v('j_c').trim()});S.sync.since=0;ST.msg='已加入家庭!';await sync();loadMe();return}catch(x){ST.msg=x.message}render()}
+function setApi(){S.sync.api=v('s_api').trim();raw();render()}
+function unlink(){if(confirm('中斷這台裝置的連線?資料仍保留在本機。')){S.sync={api:S.sync.api,token:'',since:0,h:{}};ST={};raw();render()}}
+const cloud=()=>{const y=S.sync,m=ST.me;let h='<div class="card"><h2>☁️ 雲端同步與 Telegram</h2>';
+ if(!y.api)h+='<div class="mu">貼上後端網址(部署 Worker 後取得)</div><div class="row"><input id="s_api" placeholder="https://life-api.xxx.workers.dev"><button class="s" onclick="setApi()">儲存</button></div>';
+ else if(!y.token)h+='<button onclick="startPair()">連結 Telegram</button>';
+ else if(ST.code)h+=`<div class="bub">請在 Telegram 對 @${e(ST.bot)} 傳送這組配對碼:<div class="big">${ST.code}</div>10 分鐘內有效,成功後會自動更新。</div>`;
+ else if(m&&m.bound){h+=`<div class="mu">✅ 已連線・家庭成員:${m.members.map(e).join('、')}</div>
+ <div class="row" style="margin:8px 0"><button class="s" onclick="sync().then(render)">立即同步</button><button class="s g" onclick="mkInv()">產生家人邀請碼</button></div>${ST.inv?`<div class="bub">邀請碼 <b>${ST.inv}</b>(24 小時內有效),請家人在自己的 App 輸入。</div>`:''}
+ <div class="row" style="margin:8px 0"><input id="j_c" placeholder="輸入邀請碼加入家庭"><button class="s" onclick="joinFam()">加入</button></div>
+ <h2 style="margin-top:10px">Telegram 提醒</h2><div class="row"><select id="r_h">${[...Array(24).keys()].map(i=>`<option value="${i}" ${m.prefs.hour===i?'selected':''}>每天 ${i}:00</option>`).join('')}</select></div>
+ ${[['r_s','stock','日用品快用完'],['r_hh','health','健康鼓勵'],['r_f','fin','今天還沒記帳']].map(([i,k,n])=>`<label class="li"><span>${n}</span><input id="${i}" type="checkbox" style="flex:none" ${m.prefs[k]?'checked':''}></label>`).join('')}<button class="s" onclick="savePrefs()">儲存提醒設定</button>`}
+ else h+='<div class="mu">'+(m&&m.err?'連線失敗,請確認後端網址與網路':'載入中…')+'</div>';
+ return h+(ST.msg?`<div class="mu" style="margin-top:6px">${e(ST.msg)}</div>`:'')+(y.api?'<div class="mu" style="margin-top:8px"><a onclick="unlink()">中斷連線/更換網址</a></div>':'')+'</div>'};
 /* ---------- overview & settings ---------- */
 function pMain(){const m=S.cfg.mods,t=td(),f=fin(t.slice(0,7)),today=S.tx.filter(x=>x.d===t&&x.type==='out').reduce((a,x)=>a+x.amt,0);
  return `<h1>${S.cfg.mascot} 嗨,${e(S.cfg.name)}!</h1>
@@ -153,13 +196,13 @@ function pSet(){const c=S.cfg;return `<h1>⚙️ 設定</h1><div class="card"><h
  <div class="card"><h2>我的類別</h2>${[['out','記帳'],['item','日用品']].map(([k,n])=>`<div class="mu" style="margin-top:6px">${n}</div><div class="row">${S.cats[k].map((x,i)=>`<span class="chip">${x[1]} ${e(x[0])} <a onclick="S.cats['${k}'].splice(${i},1);save();render()">✕</a></span>`).join('')}</div>`).join('')}<div class="mu" style="margin-top:8px">新增類別:到記帳或日用品的類別選單,選「＋新增類別」</div></div>
  <div class="card"><h2>個人設定</h2><div class="row"><input value="${e(c.name)}" placeholder="暱稱" onchange="S.cfg.name=this.value;save()"><input type="number" value="${c.budget}" onchange="S.cfg.budget=+this.value||0;save()"></div><div class="mu">左:暱稱(顯示為記帳者) 右:每月預算</div>
  <label class="li"><span>上月結餘自動轉為本月收入</span><input type="checkbox" style="flex:none" ${c.carry?'checked':''} onchange="S.cfg.carry=this.checked?1:0;save();render()"></label></div>
- <div class="card mu">目前資料存在這個瀏覽器裡。家人共用與 Telegram 提醒需要後端(Cloudflare Workers + D1)。<br><button class="g s" style="margin-top:8px" onclick="if(confirm('確定清除全部資料?')){S=JSON.parse(JSON.stringify(DEF));save();render()}">清除全部資料</button></div>`}
+ ${cloud()}<div class="card mu">資料先存在這台裝置,連上雲端後會自動同步。<br><button class="g s" style="margin-top:8px" onclick="if(confirm('確定清除全部資料?')){S=JSON.parse(JSON.stringify(DEF));save();render()}">清除全部資料</button></div>`}
 
-function render(){const m=S.cfg.mods;document.documentElement.dataset.theme=S.cfg.theme;const rs=document.documentElement.style;rs.setProperty('--r',S.cfg.round||'18px');S.cfg.custom?(rs.setProperty('--ac',S.cfg.custom),rs.setProperty('--ac2','color-mix(in srgb,'+S.cfg.custom+' 22%,var(--card))')):(rs.removeProperty('--ac'),rs.removeProperty('--ac2'));
+function render(){const m=S.cfg.mods;if(tab==='set'&&S.sync.token&&!ST.me&&!ST.code){ST.me={};loadMe()}document.documentElement.dataset.theme=S.cfg.theme;const rs=document.documentElement.style;rs.setProperty('--r',S.cfg.round||'18px');S.cfg.custom?(rs.setProperty('--ac',S.cfg.custom),rs.setProperty('--ac2','color-mix(in srgb,'+S.cfg.custom+' 22%,var(--card))')):(rs.removeProperty('--ac'),rs.removeProperty('--ac2'));
  const T=[['main','🏠','總覽'],m.fin&&['fin','💰','記帳'],m.home&&['home','🧺','日用品'],m.health&&['health','🌿','健康'],['set','⚙️','設定']].filter(Boolean);
  if(tab==='home'&&!m.home&&!T.find(x=>x[0]==='home'))tab='main';
  if(!T.find(x=>x[0]===tab))tab='main';
  $('nav').innerHTML=T.map(([k,i,n])=>`<a class="${tab===k?'on':''}" onclick="tab='${k}';render()"><b>${i}</b>${n}</a>`).join('');
  $('app').innerHTML={main:pMain,fin:pFin,home:pHome,health:pHealth,set:pSet}[tab]()}
-tab='main';render();
+tab='main';render();sync();document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 </script></body></html>
