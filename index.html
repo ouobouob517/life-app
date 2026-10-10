@@ -84,7 +84,7 @@ function toast(m){let t=$('toast');if(!t){t=document.createElement('div');t.id='
 function addTx(){const amt=+v('a_amt');if(!amt)return;const cat=v('a_cat'),scope=v('a_scope'),ty=v('a_type');if(cat==='__new'&&ty==='out')return;
  const o={d:v('a_d')||td(),amt,type:ty,cat:ty==='in'?'收入':cat,acct:v('a_acct'),card:v('a_acct')==='信用卡'?v('a_card'):'',note:v('a_note'),scope};if(o.card)S.cfg.lastCard=o.card;
  if(EDT)Object.assign(S.tx.find(x=>x.id===EDT),o);else S.tx.unshift({id:uid(),...o,by:S.cfg.name});
- if(ty==='out')S.mem[cat]=scope;if(ty==='in'&&!EDT&&$('a_loan')&&v('a_loan')){const l=S.loans.find(x=>x.id===v('a_loan'));if(l&&remain(l)>0)l.repays.push({d:o.d,amt:Math.min(amt,remain(l))})}EDT=null;MON=o.d.slice(0,7);save();render();toast('已儲存 ✨')}
+ if(ty==='out')S.mem[cat]=scope;if(ty==='in'&&!EDT&&$('a_loan')&&v('a_loan')){const l=S.loans.find(x=>x.id===v('a_loan'));if(l&&remain(l)>0)l.repays.push({d:o.d,amt:Math.min(amt,remain(l)),item:o.note})}EDT=null;MON=o.d.slice(0,7);save();render();toast('已儲存 ✨')}
 function editTx(id){EDT=id;render();setTimeout(()=>{const x=$('txf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
 function delTx(){S.tx=S.tx.filter(x=>x.id!==EDT);EDT=null;save();render();toast('已刪除')}
 function pickCat(){const c=v('a_cat');if(S.mem[c])$('a_scope').value=S.mem[c]}
@@ -132,10 +132,10 @@ function pCard(){const cs=allCards(),sel=cs.find(c=>c.id===CSELC)?CSELC:'',I=(se
 let LED=null,LSHOW='open';
 const remain=l=>l.amt-(l.repays||[]).reduce((a,r)=>a+r.amt,0),loanTot=()=>S.loans.reduce((a,l)=>a+Math.max(0,remain(l)),0);
 function addLoan(){const w=v('l_w').trim(),amt=+v('l_a');if(!w||!amt)return;const o={who:w,amt,d:v('l_d')||td(),note:v('l_n')};
- if(LED)Object.assign(S.loans.find(x=>x.id===LED),o);else{S.loans.unshift({id:uid(),...o,repays:[]});if($('l_x')&&$('l_x').checked)S.tx.unshift({id:uid(),d:o.d,amt,type:'out',cat:'借出款',acct:'現金',card:'',note:'借給 '+w,scope:'p',by:S.cfg.name})}
+ if(LED)Object.assign(S.loans.find(x=>x.id===LED),o);else{S.loans.unshift({id:uid(),...o,repays:[]});if($('l_x')&&$('l_x').checked)S.tx.unshift({id:uid(),d:o.d,amt,type:'out',cat:'借出款',acct:'現金',card:'',note:'借給 '+w+(o.note?'('+o.note+')':''),scope:'p',by:S.cfg.name})}
  LED=null;save();render();toast('已儲存 🤝')}
 function repay(id){const l=S.loans.find(x=>x.id===id),a=+v('ra_'+id),d=v('rd_'+id)||td();if(!a)return;if(a>remain(l)+0.001)return toast('還款金額超過剩餘 '+money(remain(l)));
- l.repays.push({d,amt:a});if($('ri_'+id).checked)S.tx.unshift({id:uid(),d,amt:a,type:'in',cat:'收入',acct:'現金',card:'',note:'還款:'+l.who,scope:'p',by:S.cfg.name});save();render();toast('已從借出款扣除 ✅')}
+ const it=v('rn_'+id).trim();l.repays.push({d,amt:a,item:it});if($('ri_'+id).checked)S.tx.unshift({id:uid(),d,amt:a,type:'in',cat:'收入',acct:'現金',card:'',note:'還款:'+l.who+(it?'('+it+')':''),scope:'p',by:S.cfg.name});save();render();toast('已從借出款扣除 ✅')}
 function delRepay(id,k){S.loans.find(x=>x.id===id).repays.splice(k,1);save();render()}
 function editLoan(id){LED=id;render();setTimeout(()=>{const x=$('lf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
 function delLoan(id){if(confirm('刪除這筆借出款?')){S.loans=S.loans.filter(x=>x.id!==id);save();render()}}
@@ -143,13 +143,13 @@ function pLoan(){const L=S.loans,F=L.filter(l=>LSHOW==='all'||remain(l)>0.001),l
  L.forEach(l=>{if(remain(l)>0.001)by[l.who]=(by[l.who]||0)+remain(l)});
  return `<div class="card"><div class="mu">借出中合計</div><div class="big">${money(loanTot())}</div>${Object.entries(by).map(([k,n])=>`<div class="row sp mu"><span>🤝 ${e(k)}</span><span>${money(n)}</span></div>`).join('')}</div>
  <div class="card" id="lf"><h2>${LED?'✏️ 修改借出款':'新增借出款'}</h2><div class="row"><input id="l_w" list="lw" placeholder="借給誰" value="${e(l0.who)}"><datalist id="lw">${[...new Set(L.map(l=>l.who))].map(n=>`<option value="${e(n)}">`).join('')}</datalist><input id="l_a" type="number" placeholder="金額" value="${l0.amt}"></div>
- <div class="row" style="margin-top:8px"><input id="l_d" type="date" value="${l0.d}"><input id="l_n" placeholder="備註" value="${e(l0.note)}"></div>
+ <div class="row" style="margin-top:8px"><input id="l_d" type="date" value="${l0.d}"><input id="l_n" placeholder="購買的東西/備註" value="${e(l0.note)}"></div>
  ${LED?'':'<label class="li"><span class="mu">同時記一筆支出(從結餘扣掉)</span><input id="l_x" type="checkbox" style="flex:none"></label>'}
  <div class="row" style="margin-top:8px"><button style="flex:1" onclick="addLoan()">${LED?'儲存修改':'記下來'}</button>${LED?'<button class="g" onclick="LED=null;render()">取消</button>':''}</div></div>
  <div class="row" style="margin-bottom:10px"><span class="chip ${LSHOW==='open'?'on':''}" onclick="LSHOW='open';render()">未還清</span><span class="chip ${LSHOW==='all'?'on':''}" onclick="LSHOW='all';render()">全部</span></div>
  ${F.map(l=>{const r=remain(l),pct=Math.min(100,(l.amt-r)/l.amt*100);return `<div class="card"><div class="row sp"><b>🤝 ${e(l.who)}</b><span class="mu">${l.d}</span></div><div class="row sp"><span>借出 ${money(l.amt)}</span><b class="${r>0.001?'warn':''}">${r>0.001?'還剩 '+money(r):'✅ 已還清'}</b></div><div class="bar" style="margin:6px 0"><i style="width:${pct}%"></i></div>${l.note?`<div class="mu">${e(l.note)}</div>`:''}
- ${r>0.001?`<details><summary>記錄還款</summary><div class="row"><input id="ra_${l.id}" type="number" value="${r}" placeholder="還款金額"><input id="rd_${l.id}" type="date" value="${td()}"></div><label class="li"><span class="mu">同時記一筆收入</span><input id="ri_${l.id}" type="checkbox" style="flex:none"></label><button class="s" onclick="repay('${l.id}')">從借出款扣除</button></details>`:''}
- ${(l.repays||[]).length?`<details><summary>還款紀錄 (${l.repays.length})</summary>${l.repays.map((x,k)=>`<div class="li"><span class="mu">${x.d} 還 ${money(x.amt)}</span><a class="mu" onclick="delRepay('${l.id}',${k})">✕</a></div>`).join('')}</details>`:''}
+ ${r>0.001?`<details><summary>記錄還款</summary><div class="row"><input id="ra_${l.id}" type="number" value="${r}" placeholder="還款金額"><input id="rd_${l.id}" type="date" value="${td()}"></div><input id="rn_${l.id}" placeholder="購買的東西/備註(可不填)" style="width:100%;margin-top:6px"><label class="li"><span class="mu">同時記一筆收入</span><input id="ri_${l.id}" type="checkbox" style="flex:none"></label><button class="s" onclick="repay('${l.id}')">從借出款扣除</button></details>`:''}
+ ${(l.repays||[]).length?`<details><summary>還款紀錄 (${l.repays.length})</summary>${l.repays.map((x,k)=>`<div class="li"><span class="mu">${x.d} 還 ${money(x.amt)}${x.item?'・'+e(x.item):''}</span><a class="mu" onclick="delRepay('${l.id}',${k})">✕</a></div>`).join('')}</details>`:''}
  <div class="row" style="margin-top:8px"><button class="s g" onclick="editLoan('${l.id}')">✏️ 修改</button><button class="s g" onclick="delLoan('${l.id}')">刪除</button></div></div>`}).join('')||'<div class="mu">還沒有借出款紀錄</div>'}`}
 const FSEG=()=>`<h1>💰 記帳</h1><div class="row" style="margin-bottom:10px"><span class="chip ${FSUB==='gen'?'on':''}" onclick="FSUB='gen';render()">📒 一般記帳</span><span class="chip ${FSUB==='card'?'on':''}" onclick="FSUB='card';render()">💳 信用卡</span><span class="chip ${FSUB==='loan'?'on':''}" onclick="FSUB='loan';render()">🤝 借出款</span></div>`;
 function pFin(){return FSEG()+(FSUB==='card'?pCard():FSUB==='loan'?pLoan():pGen())}
