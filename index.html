@@ -32,6 +32,11 @@ nav a{flex:1;text-align:center;font-size:12px;padding:4px;border-radius:12px;col
 details summary{cursor:pointer;color:var(--ac);font-weight:600;margin:6px 0}
 .warn{color:#e0803a}html{background:var(--bg)}
 .tr{display:grid;grid-template-columns:40px 80px 1fr 86px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--ac2);cursor:pointer}.tr>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.am{text-align:right;font-variant-numeric:tabular-nums}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0}.cw{text-align:center;font-size:12px;color:var(--mu);padding:2px}
+.cd{position:relative;height:58px;font-size:12px;cursor:pointer;border-radius:8px}.cd.sel{background:var(--ac2)}.cd b{position:absolute;top:2px;left:50%;transform:translateX(-50%);min-width:20px;text-align:center;border-radius:99px;font-weight:600}.cd.td b{background:var(--ac);color:#fff}
+.cd i{position:absolute;display:block}.pb{left:0;right:0;bottom:19px;height:9px;background:var(--ac)}.pb.s{left:6px;border-radius:9px 0 0 9px}.pb.e{right:6px;border-radius:0 9px 9px 0}.pb.s.e{border-radius:9px}.pb.pr{background:var(--ac2);box-shadow:inset 0 0 0 1.5px var(--ac)}
+.rb{left:0;right:0;bottom:14px;height:3px;background:#5aa9f0}.rb.s{left:50%}.rb.e{right:50%}.lg{top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--mu)}
+.dts{position:absolute;bottom:1px;left:0;right:0;display:flex;justify-content:center;gap:3px}.dt{width:10px;height:10px;border-radius:50%;display:block}
 </style></head><body><main id="app"></main><nav id="nav"></nav>
 <script>
 const td=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -42,7 +47,7 @@ const IC=Object.fromEntries(OUT.concat([['收入','💰']]));
 const ICAT=['清潔','衛浴','廚房','保健品','食品','其他'];
 const EMO=['🍜','🧋','☕','🍰','🛒','👕','📚','🎁','🐶','🐱','✈️','💡','🧼','🥬','🪥','💄','🧸','🏋️','🧾','🎬','🚗','🌸'];
 const THEMES=[['peach','蜜桃粉'],['milk','奶茶色'],['mint','薄荷綠'],['sky','天空藍'],['lavender','薰衣草'],['lemon','檸檬黃'],['night','夜空紫'],['cocoa','可可棕']];
-const DEF={cfg:{mods:{fin:1,home:1,health:1,period:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px',cardClose:23,cardPay:10,prof:{sex:'f',age:'',h:'',act:'1.375'},cycle:28,periodAhead:3,periodRemind:true,contraWear:21,contraGap:7,contraRemind:true,contraType:'避孕環'},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},loans:[],food:[],period:[],rems:[],contra:[],cards:[{id:'c1',name:'國泰',close:23,pay:10},{id:'c2',name:'華南',close:23,pay:10},{id:'c3',name:'其他',close:23,pay:10}],cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
+const DEF={cfg:{mods:{fin:1,home:1,health:1,period:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px',cardClose:23,cardPay:10,prof:{sex:'f',age:'',h:'',act:'1.375'},cycle:28,periodAhead:3,periodRemind:true,contraWear:21,contraGap:7,contraRemind:true,contraType:'避孕環',cal:{period:1,predict:1,contra:1,log:1,food:0}},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},loans:[],food:[],period:[],rems:[],contra:[],cards:[{id:'c1',name:'國泰',close:23,pay:10},{id:'c2',name:'華南',close:23,pay:10},{id:'c3',name:'其他',close:23,pay:10}],cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
 function load(){try{const s=JSON.parse(localStorage.getItem('lifeapp'));if(s){const D=JSON.parse(JSON.stringify(DEF));return {...D,...s,cfg:{...D.cfg,...s.cfg,mods:{...D.cfg.mods,...s.cfg.mods}}}}}catch(x){}return JSON.parse(JSON.stringify(DEF))}
 const DEFLOC=()=>[['廚房','🍳'],['浴室','🛁'],['客廳','🛋️'],['臥室','🛏️'],['儲藏室','📦'],['冰箱','🧊']];
 let S=load(),tab='home',view='all';S.cats.loc=S.cats.loc||DEFLOC();
@@ -71,10 +76,11 @@ const clOf=(d,c)=>{const[y,m,dd]=d.split('-').map(Number),n=dd>c.close?addM(y+'-
 const pyOf=(cl,c)=>{const n=addM(cl.slice(0,7),c.pay<=c.close?1:0);return fmt(+n.slice(0,4),+n.slice(5),c.pay)};
 const cardTx=()=>S.tx.filter(t=>t.acct==='信用卡'&&t.type==='out'&&inView(t));
 function allCards(){const cs=S.cards.filter(c=>!c.hide);if(cardTx().some(t=>!S.cards.find(c=>c.id===t.card)))cs.push({id:'_',name:'未指定',close:CC(),pay:CP()});return cs}
-function cardInfo(c){const st={};cardTx().filter(t=>crd(t).id===c.id).forEach(t=>{const k=clOf(t.d,c);(st[k]=st[k]||{sum:0,list:[]}).sum+=t.amt;st[k].list.push(t)});
+const myAmt=t=>t.scope==='s'?t.amt/2:t.amt;
+function cardInfo(c){const st={};cardTx().filter(t=>crd(t).id===c.id).forEach(t=>{const k=clOf(t.d,c);(st[k]=st[k]||{sum:0,list:[]}).sum+=myAmt(t);st[k].list.push(t)});
  const cur=clOf(td(),c),pm=addM(cur.slice(0,7),-1),prev=fmt(+pm.slice(0,4),+pm.slice(5),c.close),ps=(st[prev]||{sum:0}).sum;
  return{c,st,cur,curPay:pyOf(cur,c),curSum:(st[cur]||{sum:0}).sum,prev,prevPay:pyOf(prev,c),prevSum:ps,unpaid:pyOf(prev,c)>=td()&&ps>0}}
-function cardLine(){const I=allCards().map(cardInfo),u=I.filter(x=>x.unpaid);return u.length?`待繳 ${money(u.reduce((a,x)=>a+x.prevSum,0))}(最近 ${mdl(u.map(x=>x.prevPay).sort()[0])} 前)`:`本期刷卡 ${money(I.reduce((a,x)=>a+x.curSum,0))}`}
+function cardLine(){const I=allCards().filter(c=>!c.owner).map(cardInfo),u=I.filter(x=>x.unpaid);return u.length?`待繳 ${money(u.reduce((a,x)=>a+x.prevSum,0))}(最近 ${mdl(u.map(x=>x.prevPay).sort()[0])} 前)`:`本期刷卡 ${money(I.reduce((a,x)=>a+x.curSum,0))}`}
 function fin(m){const A=S.tx.filter(inView);
  const cur=A.filter(t=>t.d.startsWith(m)),prior=A.filter(t=>t.d<m+'-01');
  const sum=(L,ty)=>L.filter(t=>t.type===ty).reduce((a,t)=>a+t.amt,0);
@@ -86,7 +92,8 @@ function addTx(){const amt=+v('a_amt');if(!amt)return;const cat=v('a_cat'),scope
  if(EDT)Object.assign(S.tx.find(x=>x.id===EDT),o);else S.tx.unshift({id:uid(),...o,by:S.cfg.name});
  if(ty==='out')S.mem[cat]=scope;if(ty==='in'&&!EDT&&$('a_loan')&&v('a_loan')){const l=S.loans.find(x=>x.id===v('a_loan'));if(l&&remain(l)>0)l.repays.push({d:o.d,amt:Math.min(amt,remain(l)),item:o.note})}EDT=null;MON=o.d.slice(0,7);save();render();toast('已儲存 ✨')}
 function editTx(id){EDT=id;render();setTimeout(()=>{const x=$('txf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
-function delTx(){S.tx=S.tx.filter(x=>x.id!==EDT);EDT=null;save();render();toast('已刪除')}
+function delCat(k,i){const n=S.cats[k][i][0];if(confirm('確定刪除「'+n+'」這個類別?')){S.cats[k].splice(i,1);save();render()}}
+function delTx(){if(!confirm('確定刪除這筆紀錄?'))return;S.tx=S.tx.filter(x=>x.id!==EDT);EDT=null;save();render();toast('已刪除')}
 function pickCat(){const c=v('a_cat');if(S.mem[c])$('a_scope').value=S.mem[c]}
 const selC=i=>{CSEL=CSEL===CL[i]?'':CL[i];render()};
 function pie(E,tot){const R=70,r=44,P=(a,q)=>[80+q*Math.cos(a),80+q*Math.sin(a)];let a0=-Math.PI/2,h='';
@@ -94,11 +101,11 @@ function pie(E,tot){const R=70,r=44,P=(a,q)=>[80+q*Math.cos(a),80+q*Math.sin(a)]
   if(f>.9999)h+=`<circle cx="80" cy="80" r="${R}" fill="${col}" onclick="selC(${i})"/>`;
   else{const[x0,y0]=P(a0,R),[x1,y1]=P(a1,R);h+=`<path d="M${x0},${y0}A${R},${R} 0 ${f>.5?1:0} 1 ${x1},${y1}L80,80Z" fill="${col}" onclick="selC(${i})" style="cursor:pointer;opacity:${op}"/>`}a0=a1});
  return `<svg viewBox="0 0 160 160" width="150" style="flex:none">${h}<circle cx="80" cy="80" r="${r}" fill="var(--card)"/><text x="80" y="76" text-anchor="middle" style="font-size:9px;fill:var(--mu)">總支出</text><text x="80" y="92" text-anchor="middle" style="font-size:12px;font-weight:700;fill:var(--tx)">${money(tot)}</text></svg>`}
-const trow=t=>`<div class="tr" onclick="editTx('${t.id}')"><span class="mu">${t.d.slice(5).replace('-','/')}</span><span>${icon(t.cat)} ${e(t.cat)}</span><span class="mu">${e(t.note)||'—'}・${t.scope==='s'?'共用':'個人'}・${e(t.by)}${t.acct==='信用卡'?' 💳'+e(crd(t).name):''}</span><b class="am">${t.type==='in'?'+':'-'}${money(t.amt)}</b></div>`;
+const trow=(t,h)=>`<div class="tr" onclick="editTx('${t.id}')"><span class="mu">${t.d.slice(5).replace('-','/')}</span><span>${icon(t.cat)} ${e(t.cat)}</span><span class="mu">${e(t.note)||'—'}・${t.scope==='s'?(h?'共用÷2':'共用'):'個人'}・${e(t.by)}${t.acct==='信用卡'?' 💳'+e(crd(t).name):''}</span><b class="am">${t.type==='in'?'+':'-'}${money(h&&t.scope==='s'?t.amt/2:t.amt)}</b></div>`;
 function txForm(){const t=S.tx.find(x=>x.id===EDT)||{type:'out',amt:'',cat:SEL.out||S.cats.out[0][0],scope:'p',acct:'信用卡',note:'',d:td()};
  const o=(a,b,l)=>`<option value="${a}" ${b===a?'selected':''}>${l||a}</option>`;
  return `<div class="card" id="txf"><h2>${EDT?'✏️ 修改這筆':'新增一筆'}</h2><div class="row"><select id="a_type" onchange="{const x=$('a_lrow');if(x)x.style.display=this.value==='in'?'':'none'}">${o('out',t.type,'支出')}${o('in',t.type,'收入')}</select><input id="a_amt" type="number" inputmode="decimal" placeholder="金額" value="${t.amt}"></div>${EDT||!S.loans.some(l=>remain(l)>0.001)?'':`<div class="row" id="a_lrow" style="margin-top:8px;display:none"><select id="a_loan"><option value="">這筆收入不是還款</option>${S.loans.filter(l=>remain(l)>0.001).map(l=>`<option value="${l.id}">🤝 ${e(l.who)} 還剩 ${money(remain(l))}</option>`).join('')}</select></div>`}
- <div class="row" style="margin-top:8px"><select id="a_cat" onchange="onCat('out')">${catOpts('out',t.cat)}</select><select id="a_scope">${o('p',t.scope,'👤 個人')}${o('s',t.scope,'👨‍👩‍👧 共用')}</select><select id="a_acct" onchange="$('a_card').style.display=this.value==='信用卡'?'':'none'">${o('現金',t.acct)}${o('信用卡',t.acct==='電子支付'?'信用卡':t.acct)}</select><select id="a_card" style="${t.acct==='現金'?'display:none':''}">${S.cards.filter(c=>!c.hide||c.id===t.card).map(c=>`<option value="${c.id}" ${(t.card||S.cfg.lastCard||'')===c.id?'selected':''}>💳 ${e(c.name)}</option>`).join('')}</select></div>${ncUI('out')}
+ <div class="row" style="margin-top:8px"><select id="a_cat" onchange="onCat('out')">${catOpts('out',t.cat)}</select><select id="a_scope">${o('p',t.scope,'👤 個人')}${o('s',t.scope,'👨‍👩‍👧 共用')}</select><select id="a_acct" onchange="$('a_card').style.display=this.value==='信用卡'?'':'none'">${o('現金',t.acct)}${o('信用卡',t.acct==='電子支付'?'信用卡':t.acct)}</select><select id="a_card" style="${t.acct==='現金'?'display:none':''}">${S.cards.filter(c=>!c.hide||c.id===t.card).map(c=>`<option value="${c.id}" ${(t.card||S.cfg.lastCard||'')===c.id?'selected':''}>💳 ${e(c.name)}${c.owner?'('+e(c.owner)+'的卡)':''}</option>`).join('')}</select></div>${ncUI('out')}
  <div class="row" style="margin-top:8px"><input id="a_d" type="date" value="${t.d}"><input id="a_note" placeholder="備註" value="${e(t.note)}"></div>
  <div class="row" style="margin-top:10px"><button style="flex:1" onclick="addTx()">${EDT?'儲存修改':'記下來 ✨'}</button>${EDT?'<button class="g" onclick="EDT=null;render()">取消</button><button class="g" onclick="delTx()">刪除</button>':''}</div></div>`}
 function pGen(){const f=fin(MON),bal=f.inc-f.out,cats={};
@@ -110,25 +117,25 @@ function pGen(){const f=fin(MON),bal=f.inc-f.out,cats={};
  <div class="card"><div class="row sp"><div><div class="mu">結餘(${vname[view]})</div><div class="big">${money(bal)}</div></div><div class="mu" style="text-align:right">收入 ${money(f.inc)}${f.carry?`<br>含上月結轉 ${money(f.carry)}`:''}<br>支出 ${money(f.out)}</div></div>
  <div class="bar" style="margin:10px 0 4px"><i style="width:${bp}%"></i></div><div class="mu">預算 ${money(S.cfg.budget)},已用 ${Math.round(bp)}% ${bp>=100?'(超過囉,下個月再調整就好 (・ω・))':''}</div></div>
  <div class="card"><h2>分類支出</h2>${E.length?`<div class="row" style="flex-wrap:nowrap;gap:10px">${pie(E,tot)}<div style="flex:1;min-width:0">${E.map(([k,n],i)=>`<div class="row sp" onclick="selC(${i})" style="cursor:pointer;flex-wrap:nowrap;padding:3px 0;${CSEL&&CSEL!==k?'opacity:.45':''}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PAL[i%PAL.length]}"></i> ${icon(k)}${e(k)}</span><span class="mu" style="white-space:nowrap">${Math.round(n/tot*100)}%・${money(n)}</span></div>`).join('')}</div></div>
- ${CSEL?`<h2 style="margin-top:10px">${icon(CSEL)} ${e(CSEL)} 明細</h2>${det.map(trow).join('')}`:'<div class="mu" style="margin-top:6px">點圓餅圖或分類,可以看該類別的明細</div>'}`:'<div class="mu">這個月還沒有支出 (´・ω・`)</div>'}</div>
+ ${CSEL?`<h2 style="margin-top:10px">${icon(CSEL)} ${e(CSEL)} 明細</h2>${det.map(t=>trow(t)).join('')}`:'<div class="mu" style="margin-top:6px">點圓餅圖或分類,可以看該類別的明細</div>'}`:'<div class="mu">這個月還沒有支出 (´・ω・`)</div>'}</div>
  ${txForm()}
- <div class="card"><h2>本月紀錄 <span class="mu">(點一下可修改)</span></h2>${L.map(trow).join('')||'<div class="mu">空空的</div>'}</div>`}
+ <div class="card"><h2>本月紀錄 <span class="mu">(點一下可修改)</span></h2>${L.map(t=>trow(t)).join('')||'<div class="mu">空空的</div>'}</div>`}
 
 const vch=()=>`<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vname[k]}</span>`).join('')}</div>`;
-function addCard(){const n=v('cd_n').trim();if(!n)return;S.cards.push({id:uid(),name:n,close:+v('cd_c')||23,pay:+v('cd_p')||10});save();render();toast('已新增卡片')}
-function updCard(id,k,x){const c=S.cards.find(z=>z.id===id);c[k]=k==='name'?(x.trim()||c.name):k==='hide'?x:Math.min(31,Math.max(1,+x||c[k]));save();render()}
+function addCard(){const n=v('cd_n').trim();if(!n)return;S.cards.push({id:uid(),name:n,owner:v('cd_o').trim(),close:+v('cd_c')||23,pay:+v('cd_p')||10});save();render();toast('已新增卡片')}
+function updCard(id,k,x){const c=S.cards.find(z=>z.id===id);c[k]=k==='name'?(x.trim()||c.name):k==='owner'?x.trim():k==='hide'?x:Math.min(31,Math.max(1,+x||c[k]));save();render()}
 function delCard(id){if(confirm('刪除這張卡?原本的刷卡紀錄會變成「未指定」')){S.cards=S.cards.filter(c=>c.id!==id);save();render()}}
 function pCard(){const cs=allCards(),sel=cs.find(c=>c.id===CSELC)?CSELC:'',I=(sel?cs.filter(c=>c.id===sel):cs).map(cardInfo),
- tot=I.reduce((a,x)=>a+(x.unpaid?x.prevSum:0),0),cur=I.reduce((a,x)=>a+x.curSum,0);
- return vch()+`<div class="row" style="margin-bottom:10px"><span class="chip ${sel===''?'on':''}" onclick="CSELC='';render()">全部卡片</span>${cs.map(c=>`<span class="chip ${sel===c.id?'on':''}" onclick="CSELC='${c.id}';render()">${e(c.name)}</span>`).join('')}</div>
- <div class="card"><div class="row sp"><div><div class="mu">待繳款合計</div><div class="big">${money(tot)}</div></div><div style="text-align:right"><div class="mu">目前累積(下一期)</div><b>${money(cur)}</b></div></div></div>
- ${I.map(x=>`<div class="card"><div class="row sp"><b>💳 ${e(x.c.name)}</b><span class="mu">每月 ${x.c.close} 號結帳・${x.c.pay} 號繳款</span></div>
- ${x.unpaid?`<div class="li"><span>待繳(${mdl(x.prev)} 結帳)</span><span><b>${money(x.prevSum)}</b> <span class="mu">${mdl(x.prevPay)} 前・剩 ${days(td(),x.prevPay)} 天</span></span></div>`:''}
+ tot=I.filter(x=>!x.c.owner).reduce((a,x)=>a+(x.unpaid?x.prevSum:0),0),cur=I.filter(x=>!x.c.owner).reduce((a,x)=>a+x.curSum,0),ow={};I.filter(x=>x.c.owner).forEach(x=>{ow[x.c.owner]=(ow[x.c.owner]||0)+x.curSum+(x.unpaid?x.prevSum:0)});
+ return vch()+`<div class="row" style="margin-bottom:10px"><span class="chip ${sel===''?'on':''}" onclick="CSELC='';render()">全部卡片</span>${cs.map(c=>`<span class="chip ${sel===c.id?'on':''}" onclick="CSELC='${c.id}';render()">${e(c.name)}${c.owner?'・'+e(c.owner):''}</span>`).join('')}</div>
+ <div class="card"><div class="row sp"><div><div class="mu">待繳款合計</div><div class="big">${money(tot)}</div></div><div style="text-align:right"><div class="mu">目前累積(下一期)</div><b>${money(cur)}</b></div></div>${Object.entries(ow).map(([k,n])=>`<div class="row sp mu" style="margin-top:6px"><span>👪 刷 ${e(k)} 的卡(我的花費)</span><span>${money(n)}</span></div>`).join('')}<div class="mu" style="margin-top:6px">標示「共用」的消費,信用卡頁只算你負擔的一半(÷2)。</div></div>
+ ${I.map(x=>`<div class="card"><div class="row sp"><b>💳 ${e(x.c.name)}${x.c.owner?` <span class="chip" style="font-size:11px;padding:2px 8px">${e(x.c.owner)} 的卡</span>`:''}</b><span class="mu">每月 ${x.c.close} 號結帳・${x.c.pay} 號繳款</span></div>
+ ${x.unpaid?`<div class="li"><span>${x.c.owner?'待還':'待繳'}(${mdl(x.prev)} 結帳)</span><span><b>${money(x.prevSum)}</b> <span class="mu">${mdl(x.prevPay)} 前・剩 ${days(td(),x.prevPay)} 天</span></span></div>`:''}
  <div class="li"><span>目前累積(${mdl(x.cur)} 結帳)</span><span><b>${money(x.curSum)}</b> <span class="mu">${mdl(x.curPay)} 繳款</span></span></div>
- <details ${SSEL.startsWith(x.c.id+'|')?'open':''}><summary>歷期帳單明細</summary>${Object.keys(x.st).sort().reverse().slice(0,12).map(k=>`<div class="li" style="cursor:pointer" onclick="SSEL=SSEL==='${x.c.id}|${k}'?'':'${x.c.id}|${k}';render()"><span>${k.replace(/-/g,'/')} 結帳(${x.st[k].list.length} 筆)</span><span><b>${money(x.st[k].sum)}</b> <span class="mu">${mdl(pyOf(k,x.c))} 繳</span></span></div>${SSEL===x.c.id+'|'+k?x.st[k].list.slice().sort((a,b)=>a.d<b.d?1:-1).map(trow).join(''):''}`).join('')||'<div class="mu">還沒有刷卡紀錄</div>'}</details></div>`).join('')}
+ <details ${SSEL.startsWith(x.c.id+'|')?'open':''}><summary>歷期帳單明細</summary>${Object.keys(x.st).sort().reverse().slice(0,12).map(k=>`<div class="li" style="cursor:pointer" onclick="SSEL=SSEL==='${x.c.id}|${k}'?'':'${x.c.id}|${k}';render()"><span>${k.replace(/-/g,'/')} 結帳(${x.st[k].list.length} 筆)</span><span><b>${money(x.st[k].sum)}</b> <span class="mu">${mdl(pyOf(k,x.c))} 繳</span></span></div>${SSEL===x.c.id+'|'+k?x.st[k].list.slice().sort((a,b)=>a.d<b.d?1:-1).map(t=>trow(t,1)).join(''):''}`).join('')||'<div class="mu">還沒有刷卡紀錄</div>'}</details></div>`).join('')}
  ${txForm()}
- <div class="card"><details><summary>管理信用卡</summary><div class="mu">依序:名稱、結帳日、繳款日、是否顯示(取消勾選就不會出現在選單和統計)</div>${S.cards.map(c=>`<div class="row" style="margin:6px 0"><input value="${e(c.name)}" onchange="updCard('${c.id}','name',this.value)"><input type="number" min="1" max="31" value="${c.close}" style="flex:0 0 62px" onchange="updCard('${c.id}','close',this.value)"><input type="number" min="1" max="31" value="${c.pay}" style="flex:0 0 62px" onchange="updCard('${c.id}','pay',this.value)"><label class="mu" style="flex:none"><input type="checkbox" style="flex:none" ${c.hide?'':'checked'} onchange="updCard('${c.id}','hide',!this.checked)"> 顯示</label><button class="s g" onclick="delCard('${c.id}')">✕</button></div>`).join('')}
- <div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="cd_n" placeholder="新卡片名稱"><input id="cd_c" type="number" value="23" style="flex:0 0 62px"><input id="cd_p" type="number" value="10" style="flex:0 0 62px"><button class="s" onclick="addCard()">新增</button></div></details></div>`}
+ <div class="card"><details><summary>管理信用卡</summary><div class="mu">依序:名稱、誰的卡(刷家人的卡就填對方名字,空白=自己的卡)、結帳日、繳款日、是否顯示。刷家人的卡不會算進你的待繳款,會另外列出</div>${S.cards.map(c=>`<div class="row" style="margin:6px 0"><input value="${e(c.name)}" onchange="updCard('${c.id}','name',this.value)"><input value="${e(c.owner||'')}" placeholder="誰的卡(空白=我)" onchange="updCard('${c.id}','owner',this.value)"><input type="number" min="1" max="31" value="${c.close}" style="flex:0 0 62px" onchange="updCard('${c.id}','close',this.value)"><input type="number" min="1" max="31" value="${c.pay}" style="flex:0 0 62px" onchange="updCard('${c.id}','pay',this.value)"><label class="mu" style="flex:none"><input type="checkbox" style="flex:none" ${c.hide?'':'checked'} onchange="updCard('${c.id}','hide',!this.checked)"> 顯示</label><button class="s g" onclick="delCard('${c.id}')">✕</button></div>`).join('')}
+ <div class="row" style="margin-top:8px"><input id="cd_n" placeholder="新卡片名稱"><input id="cd_o" placeholder="誰的卡(空白=我)"><input id="cd_c" type="number" value="23" style="flex:0 0 62px"><input id="cd_p" type="number" value="10" style="flex:0 0 62px"><button class="s" onclick="addCard()">新增</button></div></details></div>`}
 let LED=null,LSHOW='open';
 const remain=l=>l.amt-(l.repays||[]).reduce((a,r)=>a+r.amt,0),loanTot=()=>S.loans.reduce((a,l)=>a+Math.max(0,remain(l)),0);
 function addLoan(){const w=v('l_w').trim(),amt=+v('l_a');if(!w||!amt)return;const o={who:w,amt,d:v('l_d')||td(),note:v('l_n')};
@@ -136,7 +143,7 @@ function addLoan(){const w=v('l_w').trim(),amt=+v('l_a');if(!w||!amt)return;cons
  LED=null;save();render();toast('已儲存 🤝')}
 function repay(id){const l=S.loans.find(x=>x.id===id),a=+v('ra_'+id),d=v('rd_'+id)||td();if(!a)return;if(a>remain(l)+0.001)return toast('還款金額超過剩餘 '+money(remain(l)));
  const it=v('rn_'+id).trim();l.repays.push({d,amt:a,item:it});if($('ri_'+id).checked)S.tx.unshift({id:uid(),d,amt:a,type:'in',cat:'收入',acct:'現金',card:'',note:'還款:'+l.who+(it?'('+it+')':''),scope:'p',by:S.cfg.name});save();render();toast('已從借出款扣除 ✅')}
-function delRepay(id,k){S.loans.find(x=>x.id===id).repays.splice(k,1);save();render()}
+function delRepay(id,k){if(!confirm('確定刪除這筆還款紀錄?'))return;S.loans.find(x=>x.id===id).repays.splice(k,1);save();render()}
 function editLoan(id){LED=id;render();setTimeout(()=>{const x=$('lf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
 function delLoan(id){if(confirm('刪除這筆借出款?')){S.loans=S.loans.filter(x=>x.id!==id);save();render()}}
 function pLoan(){const L=S.loans,F=L.filter(l=>LSHOW==='all'||remain(l)>0.001),l0=S.loans.find(x=>x.id===LED)||{who:'',amt:'',d:td(),note:''},by={};
@@ -165,7 +172,7 @@ function addItem(){const n=v('i_name').trim();if(!n||v('i_cat')==='__new'||v('i_
  if(EIT)Object.assign(S.items.find(x=>x.id===EIT),o);else S.items.push({id:uid(),...o,stock:0,buys:[],uses:[]});EIT=null;save();render();toast('已儲存 ✨')}
 function editItem(id){const it=S.items.find(x=>x.id===id);if(it.loc&&!S.cats.loc.find(x=>x[0]===it.loc))S.cats.loc.push([it.loc,'📍']);EIT=id;render();setTimeout(()=>{const x=$('itf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
 function delItem(id){if(confirm('刪除這個品項?')){S.items=S.items.filter(x=>x.id!==id);save();render()}}
-function delBuy(id,k){const it=S.items.find(x=>x.id===id),b=it.buys.splice(k,1)[0];it.stock=Math.max(0,(it.stock||0)-b.qty);save();render()}
+function delBuy(id,k){if(!confirm('確定刪除這筆購買紀錄?'))return;const it=S.items.find(x=>x.id===id),b=it.buys.splice(k,1)[0];it.stock=Math.max(0,(it.stock||0)-b.qty);save();render()}
 function buy(id){const it=S.items.find(x=>x.id===id),p=+v('p_'+id)||0,q=+v('q_'+id)||1,d=v('d_'+id)||td();
  it.buys.push({d,price:p,qty:q,place:v('w_'+id),mfg:v('m_'+id),exp:v('x_'+id)});it.stock=(it.stock||0)+q;
  if(p>0&&S.cfg.mods.fin)S.tx.unshift({id:uid(),d,amt:p*q,type:'out',cat:it.cat==='保健品'?'醫療':'日用品',acct:v('c_'+id)||'信用卡',note:it.name,scope:'s',by:S.cfg.name});
@@ -213,7 +220,7 @@ function coach(){const L=lg(),t=L.find(x=>x.d===td()),W=L.filter(x=>x.w),m=[];
  const g=S.cfg.goal;if(g.from&&g.to&&g.date){const wk=days(td(),g.date)/7,per=wk>0?(g.from-g.to)/wk:99;
   if(per>1)m.push(`目標每週要減約 ${per.toFixed(1)} 公斤,稍微快了一點。可以把日期放寬些,有需要也可以問問醫師或營養師喔 (・ω・)`)}
  return m.join('<br>')}
-function pHealth(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
+function pHealthRaw(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
  let svg='';if(W.length>1){const ys=W.map(x=>x.w),mn=Math.floor(Math.min(...ys)-.5),mx=Math.ceil(Math.max(...ys)+.5),L0=36,R0=10,T0=12,B0=26,w=320,h=180,sp=Math.max(1,days(W[0].d,W[W.length-1].d)),
  X=d=>L0+days(W[0].d,d)/sp*(w-L0-R0),Y=y=>T0+(1-(y-mn)/(mx-mn))*(h-T0-B0),
  ma=W.map((x,i)=>[x.d,avgW(W.slice(Math.max(0,i-6),i+1).map(y=>y.w))]),
@@ -226,14 +233,55 @@ function pHealth(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
  <polyline points="${W.map(x=>X(x.d)+','+Y(x.w)).join(' ')}" fill="none" stroke="var(--mu)" stroke-opacity=".5" stroke-width="1.5"/>
  ${W.map(x=>`<circle cx="${X(x.d)}" cy="${Y(x.w)}" r="2.5" style="fill:var(--mu)"/>`).join('')}
  <polyline points="${ma.map(q=>X(q[0])+','+Y(q[1])).join(' ')}" fill="none" stroke="var(--ac)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="mu">橫軸:日期 縱軸:體重(kg)・淺色=每日,深色=7日平均</div>`}
- return `<h1>🌿 健康</h1><div class="card"><h2>${S.cfg.mascot} 減重小助手</h2><div class="bub">${coach()}</div></div>
- ${periodCard()}${contraCard()}${foodSection()}<div class="card"><h2>今日記錄</h2><div class="row"><input id="h_d" type="date" value="${td()}"><input id="h_w" type="number" step="0.1" placeholder="體重 kg"><input id="h_wa" type="number" placeholder="飲水 ml"></div>
+ return `<h1>🌿 健康</h1><!--S:coach--><div class="card"><h2>${mas(24)} 減重小助手</h2><div class="bub">${coach()}</div></div>
+ <!--S:cal-->${calCard()}<!--S:period-->${periodCard()}<!--S:contra-->${contraCard()}<!--S:food-->${foodSection()}<!--S:log--><div class="card"><h2>今日記錄</h2><div class="row"><input id="h_d" type="date" value="${td()}"><input id="h_w" type="number" step="0.1" placeholder="體重 kg"><input id="h_wa" type="number" placeholder="飲水 ml"></div>
  <div class="row" style="margin-top:8px"><input id="h_s" type="number" step="0.5" placeholder="睡眠 小時"><input id="h_e" type="number" placeholder="運動 分鐘"><select id="h_m"><option value="">心情</option><option>😊</option><option>😐</option><option>😢</option><option>😴</option></select></div><button style="margin-top:8px;width:100%" onclick="saveLog()">儲存</button></div>
- <div class="card"><h2>體重趨勢</h2>${svg||'<div class="mu">記錄兩天以上就會出現圖 (´・ω・`)</div>'}</div>
- <div class="card"><h2>我的小目標(可不填)</h2><div class="row"><input id="g_f" type="number" placeholder="目前 kg" value="${e(g.from)}"><input id="g_t" type="number" placeholder="目標 kg" value="${e(g.to)}"><input id="g_d" type="date" value="${e(g.date)}"></div><button class="g" style="margin-top:8px" onclick="saveGoal()">設定</button>${goalCard()}<div class="mu" style="margin-top:6px">這只是陪伴參考,不是考試。減重有疑慮請諮詢醫師或營養師。</div></div>
- <div class="card"><h2>最近紀錄</h2>${L.slice(-7).reverse().map(x=>`<div class="li" style="cursor:pointer" onclick="editLog('${x.d}')"><span>${x.d.slice(5)} ${x.mood||''}</span><span class="mu">${x.w?x.w+'kg ':''}${x.water?'💧'+x.water+' ':''}${x.sleep?'😴'+x.sleep+'h ':''}${x.ex?'🏃'+x.ex+'分':''}</span></div>`).join('')||'<div class="mu">還沒有紀錄</div>'}</div>`}
+ <!--S:trend--><div class="card"><h2>體重趨勢</h2>${svg||'<div class="mu">記錄兩天以上就會出現圖 (´・ω・`)</div>'}</div>
+ <!--S:goal--><div class="card"><h2>我的小目標(可不填)</h2><div class="row"><input id="g_f" type="number" placeholder="目前 kg" value="${e(g.from)}"><input id="g_t" type="number" placeholder="目標 kg" value="${e(g.to)}"><input id="g_d" type="date" value="${e(g.date)}"></div><button class="g" style="margin-top:8px" onclick="saveGoal()">設定</button>${goalCard()}<div class="mu" style="margin-top:6px">這只是陪伴參考,不是考試。減重有疑慮請諮詢醫師或營養師。</div></div>
+ <!--S:recent--><div class="card"><h2>最近紀錄</h2>${L.slice(-7).reverse().map(x=>`<div class="li" style="cursor:pointer" onclick="editLog('${x.d}')"><span>${x.d.slice(5)} ${x.mood||''}</span><span class="mu">${x.w?x.w+'kg ':''}${x.water?'💧'+x.water+' ':''}${x.sleep?'😴'+x.sleep+'h ':''}${x.ex?'🏃'+x.ex+'分':''}</span></div>`).join('')||'<div class="mu">還沒有紀錄</div>'}</div>`}
 
-function editLog(d){const r=S.log.find(x=>x.d===d)||{};ELG=d;$('h_d').value=d;$('h_w').value=r.w??'';$('h_wa').value=r.water??'';$('h_s').value=r.sleep??'';$('h_e').value=r.ex??'';$('h_m').value=r.mood||'';$('h_w').scrollIntoView({behavior:'smooth',block:'center'});toast('已載入,修改後按儲存')}
+const HSEC={coach:'🐰 小助手',cal:'📅 月曆',period:'🌸 生理期',contra:'💊 避孕環/避孕器',food:'🍽️ 飲食小助手',log:'📝 今日記錄',trend:'📈 體重趨勢',goal:'🎯 小目標',recent:'🕘 最近紀錄'};
+const hlay=()=>{const cur=(S.cfg.hlay||[]).filter(x=>HSEC[x.id]),ids=cur.map(x=>x.id);Object.keys(HSEC).forEach(k=>{if(!ids.includes(k))cur.push({id:k,show:1})});return cur};
+function hmove(i,d){const L=hlay(),j=i+d;if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];S.cfg.hlay=L;save();render()}
+function hshow(i,x){const L=hlay();L[i].show=x?1:0;S.cfg.hlay=L;save();render()}
+function goHL(){tab='set';render();setTimeout(()=>{const x=$('hl');x&&x.scrollIntoView({behavior:'smooth'})},50)}
+function hlayCard(){return `<div class="card" id="hl"><h2>🌿 健康頁版面</h2><div class="mu" style="margin-bottom:6px">勾選要顯示的區塊,用 ↑ ↓ 調整順序</div>${hlay().map((x,i)=>`<div class="li"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" style="flex:none" ${x.show?'checked':''} onchange="hshow(${i},this.checked)">${HSEC[x.id]}</label><span style="white-space:nowrap"><button class="s g" onclick="hmove(${i},-1)">↑</button> <button class="s g" onclick="hmove(${i},1)">↓</button></span></div>`).join('')}</div>`}
+function pHealth(){const parts={};let id='_';pHealthRaw().split(/<!--S:(\w+)-->/).forEach((x,i)=>{if(i%2)id=x;else parts[i?id:'_']=x});
+ return `<div class="row sp"><h1 style="margin:6px 0 12px">🌿 健康</h1><a class="mu" onclick="goHL()">⚙️ 調整版面</a></div>`+hlay().filter(x=>x.show).map(x=>parts[x.id]||'').join('')}
+let CM=td().slice(0,7),CD='';const RING='#5aa9f0',OUTC='#f2994a';
+const periodEnd=x=>x.e||(x.s<=td()&&days(x.s,td())<=10?td():x.s);
+function dayInfo(ds,P){const r={},pe=S.period.find(x=>x.s&&x.s<=ds&&ds<=periodEnd(x));
+ if(pe)r.per={s:pe.s===ds,e:periodEnd(pe)===ds,rec:pe};
+ else if(P.last)for(let k=1;k<=2;k++){const a=addDay(P.last,P.avg*k),b=addDay(a,P.len-1);if(ds>=a&&ds<=b&&b>=td())r.pr={s:ds===a,e:ds===b}}
+ S.contra.forEach(x=>{if(!x.in)return;const sd=x.in.slice(0,10),ed=x.out?x.out.slice(0,10):(sd<=td()?td():sd);
+  if(sd<=ds&&ds<=ed)r.ring={s:sd===ds,e:ed===ds&&!!x.out,rec:x};r.ev=r.ev||[];if(sd===ds)r.ev.push(['in',x]);if(x.out&&x.out.slice(0,10)===ds)r.ev.push(['out',x]);if(!x.out&&x.plan===ds)r.ev.push(['plan',x])});
+ return r}
+function calP(k,ds){if(k==='s')S.period.push({id:uid(),s:ds,e:'',flow:'',note:''});else{const r=S.period.filter(x=>!x.e&&x.s<=ds).sort((a,b)=>a.s<b.s?1:-1)[0];if(r)r.e=ds}save();render();toast('已記錄 🌸')}
+function calC(k,ds){const tm=nowL().slice(10);if(k==='in'){const ty=S.cfg.contraType||'避孕環';S.contra.push({id:uid(),type:ty,in:ds+tm,out:'',plan:ty==='避孕環'?addDay(ds,+S.cfg.contraWear||21):'',note:''})}else{const r=S.contra.find(x=>!x.out);if(r)r.out=ds+tm<r.in?r.in:ds+tm}save();render();toast('已記錄 💊')}
+function dayPanel(ds,P){const I=dayInfo(ds,P),t=[],md=ds.slice(5).replace('-','/'),Lg=S.log.find(x=>x.d===ds),fk=foodSum(ds),hasF=S.food.some(x=>x.d===ds&&!x.none&&!x.u),pm=S.cfg.mods.period,act=[];
+ if(pm){if(I.per)t.push(`🌸 生理期第 ${days(I.per.rec.s,ds)+1} 天`);else if(I.pr)t.push('🌸 預測的生理期');
+  (I.ev||[]).forEach(([k,x])=>t.push(k==='in'?`💊 放入${x.type}(${x.in.slice(11,16)})`:k==='out'?`💊 取出${x.type}(${x.out.slice(11,16)})`:`💊 預計取出${x.type}`));
+  if(I.ring&&!(I.ev||[]).length)t.push(`💊 ${I.ring.rec.type}使用中(第 ${days(I.ring.rec.in.slice(0,10),ds)+1} 天)`)}
+ if(Lg)t.push('📝 '+[Lg.w?'體重 '+Lg.w+'kg':'',Lg.water?'飲水 '+Lg.water+'ml':'',Lg.sleep?'睡眠 '+Lg.sleep+'h':'',Lg.ex?'運動 '+Lg.ex+'分':'',Lg.mood||''].filter(Boolean).join('・'));
+ if(hasF)t.push(`🍽️ 攝取 ${Math.round(fk.kcal)} 大卡`);
+ if(pm){const open=S.period.some(x=>!x.e&&x.s<=ds&&days(x.s,ds)<=14);act.push(open?`<button class="s g" onclick="calP('e','${ds}')">🌸 這天結束</button>`:I.per?'':`<button class="s g" onclick="calP('s','${ds}')">🌸 這天開始</button>`);
+  act.push(S.contra.some(x=>!x.out)?`<button class="s g" onclick="calC('out','${ds}')">💊 這天取出</button>`:`<button class="s g" onclick="calC('in','${ds}')">💊 這天放入</button>`)}
+ act.push(`<button class="s g" onclick="editLog('${ds}')">📝 體重等</button>`,`<button class="s g" onclick="FD='${ds}';render();toast('已切換到 ${md} 的飲食')">🍽️ 飲食</button>`);
+ return `<div class="bub" style="margin-top:8px"><b>${md}</b>${t.length?'<br>'+t.join('<br>'):'<br>這天沒有紀錄'}<div class="row" style="margin-top:8px">${act.join('')}</div></div>`}
+function calCard(){const Lc=S.cfg.cal||{},pm=S.cfg.mods.period,[y,m]=CM.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)).getUTCDay(),n=dim(y,m),P=pstat(),cells=[];
+ for(let i=0;i<first;i++)cells.push('<div></div>');
+ for(let k=1;k<=n;k++){const ds=fmt(y,m,k),I=dayInfo(ds,P);let h=`<b>${k}</b>`;
+  if(Lc.log&&S.log.some(x=>x.d===ds&&(x.w||x.water||x.sleep||x.ex)))h+='<i class="lg"></i>';
+  if(pm&&Lc.period&&I.per)h+=`<i class="pb${I.per.s?' s':''}${I.per.e?' e':''}"></i>`;else if(pm&&Lc.predict&&I.pr)h+=`<i class="pb pr${I.pr.s?' s':''}${I.pr.e?' e':''}"></i>`;
+  if(pm&&Lc.contra&&I.ring)h+=`<i class="rb${I.ring.s?' s':''}${I.ring.e?' e':''}"></i>`;
+  const dots=(pm&&Lc.contra?(I.ev||[]):[]).map(([q])=>`<span class="dt" style="${q==='in'?'background:'+RING:q==='out'?'background:'+OUTC:'border:2px solid '+OUTC+';background:var(--card)'}"></span>`).join('')+(Lc.food&&S.food.some(x=>x.d===ds&&!x.none&&!x.u)?'<span class="dt" style="background:#6bbf94;width:6px;height:6px"></span>':'');
+  cells.push(`<div class="cd${ds===td()?' td':''}${ds===CD?' sel':''}" onclick="CD=CD==='${ds}'?'':'${ds}';render()">${h}<span class="dts">${dots}</span></div>`)}
+ const ch=(k,l)=>`<span class="chip ${Lc[k]?'on':''}" style="font-size:12px;padding:3px 9px" onclick="S.cfg.cal=S.cfg.cal||{};S.cfg.cal['${k}']=${Lc[k]?0:1};save();render()">${l}</span>`,
+ lg=(pm?`<span style="color:var(--ac)">▬</span> 生理期 <span style="color:var(--ac);opacity:.5">▬</span> 預測 <span style="color:${RING}">━</span> 使用中 <span style="color:${RING}">●</span> 放入 <span style="color:${OUTC}">●</span> 取出 <span style="color:${OUTC}">○</span> 預計取出 ・ `:'')+'灰點=有健康紀錄';
+ return `<div class="card"><div class="row sp"><h2 style="margin:0">📅 月曆</h2><span class="row" style="gap:6px"><button class="s g" onclick="CM=addM(CM,-1);render()">◀</button><b>${y} 年 ${m} 月</b><button class="s g" onclick="CM=addM(CM,1);render()">▶</button></span></div>
+ <div class="row" style="margin:8px 0">${pm?ch('period','🌸 生理期')+ch('predict','預測')+ch('contra','💊 避孕環'):''}${ch('log','📝 紀錄')}${ch('food','🍽️ 飲食')}</div>
+ <div class="cal">${DOW.map(x=>`<div class="cw">${x}</div>`).join('')}${cells.join('')}</div><div class="mu" style="margin-top:6px">${lg}・點日期看詳情</div>${CD?dayPanel(CD,P):''}</div>`}
+function editLog(d){if(!$('h_d'))return toast('請先到「調整版面」顯示「今日記錄」');const r=S.log.find(x=>x.d===d)||{};ELG=d;$('h_d').value=d;$('h_w').value=r.w??'';$('h_wa').value=r.water??'';$('h_s').value=r.sleep??'';$('h_e').value=r.ex??'';$('h_m').value=r.mood||'';$('h_w').scrollIntoView({behavior:'smooth',block:'center'});toast('已載入,修改後按儲存')}
 function goalCard(){const g=S.cfg.goal,f=+g.from,t=+g.to;if(!(f&&t))return'<div class="mu" style="margin-top:8px">填入目前與目標體重,我會幫你看看節奏 (・ω・)</div>';
  const W=lg().filter(x=>x.w),cur=W.length?W[W.length-1].w:f,tot=f-t,left=cur-t;
  if(tot<=0)return'<div class="bub" style="margin-top:8px">目標比目前體重高,這個分析是為減重設計的。你可以看 7 日平均趨勢就好 (๑•̀ㅂ•́)و✧</div>';
@@ -334,7 +382,7 @@ function sendFood(){const tx=v('f_in').trim();if(!tx)return;const P=parseFood(tx
  P.ex.forEach(o=>{S.food=S.food.filter(x=>!(x.u&&x.d===FD&&x.name===o.name));add(o)});
  P.items.forEach(add);P.unk.forEach(name=>add({name,q:1,kcal:0,p:0,c:0,f:0,meal:'',u:1}));
  if(!n)add({none:1});save();render();setTimeout(()=>{const x=$('f_in');x&&x.focus()},30)}
-function delFood(id){S.food=S.food.filter(x=>x.id!==id);save();render()}
+function delFood(id){if(!confirm('確定刪除這筆飲食紀錄?'))return;S.food=S.food.filter(x=>x.id!==id);save();render()}
 function saveProf(){S.cfg.prof={sex:v('p_sex'),age:v('p_age'),h:v('p_h'),act:v('p_act')};save();render();toast('基本資料已儲存 (๑>◡<๑)')}
 function foodSum(d){const s={kcal:0,p:0,c:0,f:0};S.food.filter(x=>x.d===d&&!x.none&&!x.u).forEach(x=>{s.kcal+=x.kcal;s.p+=x.p;s.c+=x.c;s.f+=x.f});return s}
 function prof(){const P=S.cfg.prof,W=lg().filter(x=>x.w),w=W.length?W[W.length-1].w:+S.cfg.goal.from||0;if(!(+P.age&&+P.h&&w))return null;const bmr=10*w+6.25*P.h-5*P.age+(P.sex==='m'?5:-161);return{w,bmr,tdee:bmr*(+P.act||1.375)}}
@@ -379,20 +427,22 @@ function periodCard(){if(!S.cfg.mods.period)return'';const P=pstat(),cur=S.perio
  <div class="row" style="margin-top:6px"><select id="pd_f"><option value="">經血量</option>${o('少',x0.flow,'少')}${o('中',x0.flow,'中')}${o('多',x0.flow,'多')}</select><input id="pd_n" placeholder="備註(症狀、心情…)" value="${e(x0.note)}"></div><div class="row" style="margin-top:8px"><button class="s" onclick="saveP()">${PED?'儲存修改':'新增'}</button>${PED?'<button class="s g" onclick="PED=null;render()">取消</button>':''}</div></div></details>
  <details><summary>提醒設定</summary><div class="row" style="margin-top:6px"><label class="mu" style="flex:1 1 130px;display:block">預設週期(天)<input id="ps_c" type="number" style="width:100%" value="${S.cfg.cycle}"></label><label class="mu" style="flex:1 1 130px;display:block">提前幾天提醒<select id="ps_a" style="width:100%">${[1,2,3,4,5,7].map(n=>o(n,+S.cfg.periodAhead,n+' 天')).join('')}</select></label></div>
  <label class="li"><span>用 Telegram 提醒</span><input id="ps_r" type="checkbox" style="flex:none" ${S.cfg.periodRemind!==false?'checked':''}></label><div class="mu">會在你設定的每日提醒時間發送:預計日前 N 天,以及預計當天。</div><button class="s" style="margin-top:6px" onclick="savePSet()">儲存</button></details></div>`}
-const remDesc=r=>(r.type==='daily'?'每天':r.type==='weekly'?'每週'+(r.days||[]).map(i=>DOW[i]).join('、'):r.type==='monthly'?'每月 '+r.dom+' 號':r.date)+' '+r.hour+':00';
-function remType(){const t=v('rm_ty');$('rm_w').style.display=t==='weekly'?'':'none';$('rm_mo').style.display=t==='monthly'?'':'none';$('rm_o').style.display=t==='once'?'':'none'}
-function saveRem(){const tx=v('rm_t').trim();if(!tx)return toast('請輸入要提醒的事項');const ty=v('rm_ty'),o={text:tx,type:ty,hour:+v('rm_h'),on:true,days:[...document.querySelectorAll('.rm_d')].filter(x=>x.checked).map(x=>+x.value),dom:+v('rm_m')||1,date:v('rm_dt')||td()};
+const remDesc=r=>{const ev=+r.every>1?r.every:0;return(r.type==='daily'?(ev?'每 '+ev+' 天':'每天'):r.type==='weekly'?(ev?'每 '+ev+' 週':'每週')+(r.days||[]).map(i=>DOW[i]).join('、'):r.type==='monthly'?'每月 '+r.dom+' 號':r.date)+' '+r.hour+':00'+(r.type!=='once'&&r.end?'(到 '+r.end.slice(5)+')':'')}
+function remType(){const t=v('rm_ty');$('rm_w').style.display=t==='weekly'?'':'none';$('rm_mo').style.display=t==='monthly'?'':'none';$('rm_o').style.display=t==='once'?'':'none';$('rm_e').style.display=t==='daily'||t==='weekly'?'':'none';$('rm_r').style.display=t==='once'?'none':''}
+function saveRem(){const tx=v('rm_t').trim();if(!tx)return toast('請輸入要提醒的事項');const ty=v('rm_ty'),o={text:tx,type:ty,hour:+v('rm_h'),on:true,days:[...document.querySelectorAll('.rm_d')].filter(x=>x.checked).map(x=>+x.value),dom:+v('rm_m')||1,date:v('rm_dt')||td(),every:Math.max(1,+v('rm_ev')||1),start:v('rm_st')||td(),end:v('rm_en')};
  if(ty==='weekly'&&!o.days.length)return toast('請至少選一天');if(RED)Object.assign(S.rems.find(x=>x.id===RED),o);else S.rems.push({id:uid(),...o});RED=null;save();render();toast('提醒已儲存 ⏰')}
-function delRem(id){S.rems=S.rems.filter(x=>x.id!==id);save();render()}
+function delRem(id){if(!confirm('確定刪除這個提醒?'))return;S.rems=S.rems.filter(x=>x.id!==id);save();render()}
 function remCard(){const r0=S.rems.find(x=>x.id===RED)||{text:'',type:'daily',hour:9,days:[],dom:1,date:td()},o=(a,b,l)=>`<option value="${a}" ${b===a?'selected':''}>${l}</option>`;
  return `<div class="card"><h2>⏰ 自訂提醒(Telegram)</h2>${S.sync.token?'':'<div class="mu warn">要先在上面連結 Telegram 才會收到提醒</div>'}
  ${S.rems.map(r=>`<div class="li"><span>${e(r.text)} <span class="mu">${remDesc(r)}</span></span><span style="white-space:nowrap"><input type="checkbox" style="flex:none" ${r.on?'checked':''} onchange="S.rems.find(x=>x.id==='${r.id}').on=this.checked;save()"> <a class="mu" onclick="RED='${r.id}';render()">✏️</a> <a class="mu" onclick="delRem('${r.id}')">✕</a></span></div>`).join('')||'<div class="mu">還沒有提醒,例如「吃保健品」「倒垃圾」「幫植物澆水」</div>'}
  <details ${RED?'open':''} style="margin-top:6px"><summary>${RED?'修改提醒':'新增提醒'}</summary><input id="rm_t" placeholder="要提醒的事項" value="${e(r0.text)}" style="width:100%;margin-top:6px">
- <div class="row" style="margin-top:8px"><select id="rm_ty" onchange="remType()">${o('daily',r0.type,'每天')}${o('weekly',r0.type,'每週')}${o('monthly',r0.type,'每月')}${o('once',r0.type,'單次')}</select><select id="rm_h">${[...Array(24).keys()].map(i=>o(i,+r0.hour,i+':00')).join('')}</select></div>
+ <div class="row" style="margin-top:8px"><select id="rm_ty" onchange="remType()">${o('daily',r0.type,'每天')}${o('weekly',r0.type,'每週(固定循環)')}${o('monthly',r0.type,'每月(固定循環)')}${o('once',r0.type,'單次')}</select><select id="rm_h">${[...Array(24).keys()].map(i=>o(i,+r0.hour,i+':00')).join('')}</select></div>
+ <div class="row" id="rm_e" style="margin-top:8px;display:${r0.type==='daily'||r0.type==='weekly'?'':'none'}"><label class="mu" style="flex:1 1 100%;display:block">每隔幾(天/週)重複一次,1 = 每次都提醒<input id="rm_ev" type="number" min="1" max="52" style="width:100%" value="${r0.every||1}"></label></div>
+ <div class="row" id="rm_r" style="margin-top:8px;display:${r0.type==='once'?'none':''}"><label class="mu" style="flex:1 1 140px;display:block">從哪天開始<input id="rm_st" type="date" style="width:100%" value="${r0.start||td()}"></label><label class="mu" style="flex:1 1 140px;display:block">循環到(可不填=一直循環)<input id="rm_en" type="date" style="width:100%" value="${r0.end||''}"></label></div>
  <div class="row" id="rm_w" style="margin-top:8px;display:${r0.type==='weekly'?'':'none'}">${DOW.map((n,i)=>`<label class="chip" style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="rm_d" value="${i}" style="flex:none" ${(r0.days||[]).includes(i)?'checked':''}>${n}</label>`).join('')}</div>
  <div id="rm_mo" style="margin-top:8px;display:${r0.type==='monthly'?'':'none'}"><input id="rm_m" type="number" min="1" max="31" value="${r0.dom}" style="width:100%" placeholder="每月幾號"></div>
  <div id="rm_o" style="margin-top:8px;display:${r0.type==='once'?'':'none'}"><input id="rm_dt" type="date" value="${r0.date}" style="width:100%"></div>
- <div class="row" style="margin-top:8px"><button class="s" onclick="saveRem()">${RED?'儲存修改':'新增'}</button>${RED?'<button class="s g" onclick="RED=null;render()">取消</button>':''}</div></details><div class="mu" style="margin-top:6px">提醒在整點發送,Telegram 訊息約在整點前後幾分鐘內送達。</div></div>`}
+ <div class="row" style="margin-top:8px"><button class="s" onclick="saveRem()">${RED?'儲存修改':'新增'}</button>${RED?'<button class="s g" onclick="RED=null;render()">取消</button>':''}</div></details><div class="mu" style="margin-top:6px">每週/每月類型設一次就會一直循環,不用每週重設;每週可以勾選多個星期。提醒在整點發送,Telegram 訊息約在整點前後幾分鐘內送達。</div></div>`}
 let CED=null;
 const nowL=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16),fdt=x=>x?x.slice(5,10).replace('-','/')+' '+x.slice(11,16):'';
 function inC(){const ty=v('ct_q')||'避孕環',n=nowL();S.cfg.contraType=ty;S.contra.push({id:uid(),type:ty,in:n,out:'',plan:ty==='避孕環'?addDay(n.slice(0,10),+S.cfg.contraWear||21):'',note:''});save();render();toast('已記錄放入 ✅')}
@@ -417,6 +467,7 @@ function contraCard(){if(!S.cfg.mods.period)return'';
  <label class="li"><span>用 Telegram 提醒</span><input id="cs_r" type="checkbox" style="flex:none" ${S.cfg.contraRemind!==false?'checked':''}></label><div class="mu">在每日提醒時間發送:預計取出前一天與當天、預計重新放入當天。預設值是常見的「戴 3 週、停 1 週」,實際請依醫師或藥品說明書。</div><button class="s" style="margin-top:6px" onclick="saveCSet()">儲存</button></details>
  <div class="mu" style="margin-top:6px">只有你看得到。這裡是記錄與提醒用途,使用方式請依醫師指示。</div></div>`}
 /* ---------- cloud sync ---------- */
+const mas=z=>['hamster','sheep'].includes(S.cfg.mascot)?`<img src="mascot-${S.cfg.mascot}.webp" alt="" style="width:${z}px;height:${z}px;border-radius:50%;vertical-align:middle">`:S.cfg.mascot;
 const hs=o=>{const t=JSON.stringify(o);let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))>>>0;return h};
 async function api(path,body){const y=S.sync,r=await fetch(y.api.replace(/\/$/,'')+path,{method:body?'POST':'GET',headers:{'content-type':'application/json',authorization:'Bearer '+y.token},body:body?JSON.stringify(body):undefined});
  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);return r.json()}
@@ -461,7 +512,7 @@ const cloud=()=>{const y=S.sync,m=ST.me;let h='<div class="card"><h2>☁️ 雲�
  return h+(ST.msg?`<div class="mu" style="margin-top:6px">${e(ST.msg)}</div>`:'')+(y.api?'<div class="mu" style="margin-top:8px"><a onclick="unlink()">中斷連線/更換網址</a></div>':'')+'</div>'};
 /* ---------- overview & settings ---------- */
 function pMain(){const m=S.cfg.mods,t=td(),f=fin(t.slice(0,7)),today=S.tx.filter(x=>x.d===t&&x.type==='out').reduce((a,x)=>a+x.amt,0);
- return `<h1>${S.cfg.mascot} 嗨,${e(S.cfg.name)}!</h1>
+ return `<h1>${mas(30)} 嗨,${e(S.cfg.name)}!</h1>
  ${m.fin?`<div class="card" onclick="tab='fin';render()"><div class="mu">💰 今日支出</div><div class="big">${money(today)}</div><div class="mu">本月結餘 ${money(f.inc-f.out)}</div><div class="mu">💳 ${cardLine()}</div>${loanTot()>0.001?`<div class="mu">🤝 借出中 ${money(loanTot())}</div>`:''}</div>`:''}
  ${m.home?`<div class="card" onclick="tab='home';render()"><div class="mu">🧺 快用完的品項</div>${S.items.filter(i=>stat(i).low).map(i=>`<div>${e(i.name)}</div>`).join('')||'<div class="mu">目前都夠用 (๑˃ᴗ˂)ﻭ</div>'}${expSoon().map(x=>`<div class="warn">⏰ ${expTxt(x)}</div>`).join('')}</div>`:''}
  ${m.health?`<div class="card" onclick="tab='health';render()"><div class="mu">🌿 小助手說</div><div class="bub" style="margin-top:6px">${coach()}</div></div>`:''}
@@ -471,12 +522,12 @@ function pSet(){const c=S.cfg;return `<h1>⚙️ 設定</h1><div class="card"><h
  <div class="card"><h2>風格</h2><div class="row">${THEMES.map(([k,n])=>`<span class="chip ${c.theme===k?'on':''}" onclick="S.cfg.theme='${k}';save();render()">${n}</span>`).join('')}</div>
  <div class="mu" style="margin:10px 0 4px">自訂主色</div><div class="row"><input type="color" style="flex:none;padding:2px;width:48px;height:36px" value="${c.custom||'#ff8fa3'}" onchange="S.cfg.custom=this.value;save();render()"><button class="g s" onclick="S.cfg.custom='';save();render()">還原主題色</button></div>
  <div class="mu" style="margin:10px 0 4px">圓角</div><div class="row">${[['8px','方正'],['18px','圓潤'],['30px','超圓']].map(([k,n])=>`<span class="chip ${c.round===k?'on':''}" onclick="S.cfg.round='${k}';save();render()">${n}</span>`).join('')}</div>
- <div class="mu" style="margin:10px 0 4px">吉祥物</div><div class="row">${['🐰','🐱','🐻','🐶','🦊','🐼','🐥'].map(k=>`<span class="chip ${c.mascot===k?'on':''}" onclick="S.cfg.mascot='${k}';save();render()">${k}</span>`).join('')}</div></div>
- <div class="card"><h2>我的類別</h2>${[['out','記帳'],['item','日用品'],['loc','存放位置']].map(([k,n])=>`<div class="mu" style="margin-top:6px">${n}</div><div class="row">${S.cats[k].map((x,i)=>`<span class="chip">${x[1]} ${e(x[0])} <a onclick="S.cats['${k}'].splice(${i},1);save();render()">✕</a></span>`).join('')}</div>`).join('')}<div class="mu" style="margin-top:8px">新增類別:到記帳或日用品的類別選單,選「＋新增類別」</div></div>
+ <div class="mu" style="margin:10px 0 4px">吉祥物</div><div class="row">${['🐰','🐱','🐻','🐶','🦊','🐼','🐥'].map(k=>`<span class="chip ${c.mascot===k?'on':''}" onclick="S.cfg.mascot='${k}';save();render()">${k}</span>`).join('')}${['hamster','sheep'].map(k=>`<span class="chip ${c.mascot===k?'on':''}" style="padding:3px 8px" onclick="S.cfg.mascot='${k}';save();render()"><img src="mascot-${k}.webp" alt="" style="width:30px;height:30px;border-radius:50%;vertical-align:middle"></span>`).join('')}</div></div>
+ <div class="card"><h2>我的類別</h2>${[['out','記帳'],['item','日用品'],['loc','存放位置']].map(([k,n])=>`<div class="mu" style="margin-top:6px">${n}</div><div class="row">${S.cats[k].map((x,i)=>`<span class="chip">${x[1]} ${e(x[0])} <a onclick="delCat('${k}',${i})">✕</a></span>`).join('')}</div>`).join('')}<div class="mu" style="margin-top:8px">新增類別:到記帳或日用品的類別選單,選「＋新增類別」</div></div>
  <div class="card"><h2>💳 預設結帳日/繳款日</h2><div class="row"><label class="mu" style="flex:1 1 120px;display:block">結帳日(每月幾號)<input type="number" min="1" max="31" style="width:100%" value="${c.cardClose}" onchange="S.cfg.cardClose=Math.min(31,Math.max(1,+this.value||23));save();render()"></label><label class="mu" style="flex:1 1 120px;display:block">繳款日(每月幾號)<input type="number" min="1" max="31" style="width:100%" value="${c.cardPay}" onchange="S.cfg.cardPay=Math.min(31,Math.max(1,+this.value||10));save();render()"></label></div><div class="mu" style="margin-top:6px">結帳日(含)以前的刷卡算本期,隔天起算下一期。繳款日若比結帳日小,就是結帳隔月才繳。這是沒指定卡片時的預設值,各卡片可在「記帳 → 信用卡 → 管理信用卡」分別設定。</div></div>
  <div class="card"><h2>個人設定</h2><div class="row"><input value="${e(c.name)}" placeholder="暱稱" onchange="S.cfg.name=this.value;save()"><input type="number" value="${c.budget}" onchange="S.cfg.budget=+this.value||0;save()"></div><div class="mu">左:暱稱(顯示為記帳者) 右:每月預算</div>
  <label class="li"><span>上月結餘自動轉為本月收入</span><input type="checkbox" style="flex:none" ${c.carry?'checked':''} onchange="S.cfg.carry=this.checked?1:0;save();render()"></label></div>
- ${cloud()}${remCard()}<div class="card mu">資料先存在這台裝置,連上雲端後會自動同步。<br><button class="g s" style="margin-top:8px" onclick="if(confirm('確定清除全部資料?')){S=JSON.parse(JSON.stringify(DEF));save();render()}">清除全部資料</button></div>`}
+ ${cloud()}${remCard()}${hlayCard()}<div class="card mu">資料先存在這台裝置,連上雲端後會自動同步。<br><button class="g s" style="margin-top:8px" onclick="if(confirm('確定清除全部資料?')){S=JSON.parse(JSON.stringify(DEF));save();render()}">清除全部資料</button></div>`}
 
 function render(){const m=S.cfg.mods;if(tab==='set'&&S.sync.token&&!ST.me&&!ST.code){ST.me={};loadMe()}document.documentElement.dataset.theme=S.cfg.theme;const rs=document.documentElement.style;rs.setProperty('--r',S.cfg.round||'18px');S.cfg.custom?(rs.setProperty('--ac',S.cfg.custom),rs.setProperty('--ac2','color-mix(in srgb,'+S.cfg.custom+' 22%,var(--card))')):(rs.removeProperty('--ac'),rs.removeProperty('--ac2'));{const mt=document.querySelector('meta[name=theme-color]');if(mt)mt.content=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#fff3ee'}
  const T=[['main','🏠','總覽'],m.fin&&['fin','💰','記帳'],m.home&&['home','🧺','日用品'],m.health&&['health','🌿','健康'],['set','⚙️','設定']].filter(Boolean);
