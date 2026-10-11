@@ -37,6 +37,7 @@ details summary{cursor:pointer;color:var(--ac);font-weight:600;margin:6px 0}
 .cd i{position:absolute;display:block}.pb{left:0;right:0;bottom:19px;height:9px;background:var(--ac)}.pb.s{left:6px;border-radius:9px 0 0 9px}.pb.e{right:6px;border-radius:0 9px 9px 0}.pb.s.e{border-radius:9px}.pb.pr{background:var(--ac2);box-shadow:inset 0 0 0 1.5px var(--ac)}
 .rb{left:0;right:0;bottom:14px;height:3px;background:#5aa9f0}.rb.s{left:50%}.rb.e{right:50%}.lg{top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--mu)}
 .dts{position:absolute;bottom:1px;left:0;right:0;display:flex;justify-content:center;gap:3px}.dt{width:10px;height:10px;border-radius:50%;display:block}
+.sc{height:54px;border-radius:8px;font-size:11px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding-top:3px;gap:1px;overflow:hidden}.sc b{font-size:11px;color:var(--mu);font-weight:600}.sc span{font-weight:700;font-size:11px}.sc em{font-style:normal;color:var(--ok);font-size:10px}.sc.td{box-shadow:inset 0 0 0 1.5px var(--ac)}.sc.sel{box-shadow:inset 0 0 0 2px var(--tx)}
 </style></head><body><main id="app"></main><nav id="nav"></nav>
 <script>
 const td=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
@@ -111,15 +112,27 @@ function txForm(){const t=S.tx.find(x=>x.id===EDT)||{type:'out',amt:'',cat:SEL.o
  <div class="row" style="margin-top:8px"><select id="a_cat" onchange="onCat('out')">${catOpts('out',t.cat)}</select><select id="a_scope">${o('p',t.scope,'👤 個人')}${o('s',t.scope,'👨‍👩‍👧 共用')}</select><select id="a_acct" onchange="$('a_card').style.display=this.value==='信用卡'?'':'none'">${o('現金',t.acct)}${o('信用卡',t.acct==='電子支付'?'信用卡':t.acct)}</select><select id="a_card" style="${t.acct==='現金'?'display:none':''}">${S.cards.filter(c=>!c.hide||c.id===t.card).map(c=>`<option value="${c.id}" ${(t.card||S.cfg.lastCard||'')===c.id?'selected':''}>💳 ${e(c.name)}${c.owner?'('+e(c.owner)+'的卡)':''}</option>`).join('')}</select></div>${ncUI('out')}
  <div class="row" style="margin-top:8px"><input id="a_d" type="date" value="${t.d}"><input id="a_note" placeholder="備註" value="${e(t.note)}"></div>
  <div class="row" style="margin-top:10px"><button style="flex:1" onclick="addTx()">${EDT?'儲存修改':'記下來 ✨'}</button>${EDT?'<button class="g" onclick="EDT=null;render()">取消</button><button class="g" onclick="delTx()">刪除</button>':''}</div></div>`}
+let GD='';
+function addOn(ds){const x=$('a_d');if(x){x.value=ds;const f=$('txf');f&&f.scrollIntoView({behavior:'smooth'});toast('已帶入 '+mdl(ds)+',填金額就能記')}}
+function spendCal(f){const[y,m]=MON.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)).getUTCDay(),n=dim(y,m),by={};
+ f.cur.forEach(t=>{const o=by[t.d]=by[t.d]||{out:0,in:0};if(t.type==='out')o.out+=myAmt(t);else o.in+=t.amt});
+ const mx=Math.max(1,...Object.values(by).map(x=>x.out)),fm=a=>a>=10000?(a/10000).toFixed(1).replace('.0','')+'萬':String(Math.round(a)),cells=[],tot=Object.values(by).reduce((a,x)=>a+x.out,0),cd=MON===td().slice(0,7)?+td().slice(8):n;
+ for(let i=0;i<first;i++)cells.push('<div></div>');
+ for(let k=1;k<=n;k++){const ds=fmt(y,m,k),o=by[ds],a=o?o.out:0;
+  cells.push(`<div class="sc${ds===td()?' td':''}${ds===GD?' sel':''}" style="${a?`background:color-mix(in srgb,var(--ac) ${Math.round(12+a/mx*50)}%,var(--card))`:''}" onclick="GD=GD==='${ds}'?'':'${ds}';render()"><b>${k}</b>${a?`<span>${fm(a)}</span>`:''}${o&&o.in?`<em>+${fm(o.in)}</em>`:''}</div>`)}
+ const L=GD?f.cur.filter(t=>t.d===GD):[],lo=L.filter(t=>t.type==='out').reduce((a,t)=>a+myAmt(t),0),li=L.filter(t=>t.type==='in').reduce((a,t)=>a+t.amt,0);
+ return `<div class="card"><h2>📅 花費月曆</h2><div class="mu" style="margin-bottom:6px">每格是當天你負擔的支出(共用消費已除以 2),顏色越深花越多,綠色小字是收入・本月共 ${money(tot)},日均 ${money(tot/Math.max(1,cd))}</div>
+ <div class="cal">${DOW.map(x=>`<div class="cw">${x}</div>`).join('')}${cells.join('')}</div>
+ ${GD?`<div class="bub" style="margin-top:8px"><b>${mdl(GD)}</b> 支出 ${money(lo)}${li?`・收入 ${money(li)}`:''}${L.map(t=>trow(t,1)).join('')||'<div class="mu" style="margin-top:6px">這天沒有紀錄</div>'}<button class="s" style="margin-top:8px" onclick="addOn('${GD}')">＋ 新增這天的紀錄</button></div>`:'<div class="mu" style="margin-top:6px">點日期可以看當天明細</div>'}</div>`}
 function pGen(){const f=fin(MON),bal=f.inc-f.out,cats={};
  f.cur.filter(t=>t.type==='out').forEach(t=>cats[t.cat]=(cats[t.cat]||0)+t.amt);
  const E=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=E.reduce((a,x)=>a+x[1],0),bp=S.cfg.budget?Math.min(100,f.out/S.cfg.budget*100):0;CL=E.map(x=>x[0]);
  const L=f.cur.slice().sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:0),det=L.filter(t=>t.type==='out'&&t.cat===CSEL),c=CC();
  return `<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vname[k]}</span>`).join('')}</div>
- <div class="row sp" style="margin-bottom:10px"><button class="s g" onclick="MON=addM(MON,-1);CSEL='';EDT=null;render()">◀</button><b>${MON.slice(0,4)} 年 ${+MON.slice(5)} 月</b><button class="s g" onclick="MON=addM(MON,1);CSEL='';EDT=null;render()">▶</button></div>
+ <div class="row sp" style="margin-bottom:10px"><button class="s g" onclick="MON=addM(MON,-1);CSEL='';GD='';EDT=null;render()">◀</button><b>${MON.slice(0,4)} 年 ${+MON.slice(5)} 月</b><button class="s g" onclick="MON=addM(MON,1);CSEL='';GD='';EDT=null;render()">▶</button></div>
  <div class="card"><div class="row sp"><div><div class="mu">結餘(${vname[view]})</div><div class="big">${money(bal)}</div></div><div class="mu" style="text-align:right">收入 ${money(f.inc)}${f.carry?`<br>含上月結轉 ${money(f.carry)}`:''}<br>支出 ${money(f.out)}</div></div>
  <div class="bar" style="margin:10px 0 4px"><i style="width:${bp}%"></i></div><div class="mu">預算 ${money(S.cfg.budget)},已用 ${Math.round(bp)}% ${bp>=100?'(超過囉,下個月再調整就好 (・ω・))':''}</div></div>
- <div class="card"><h2>分類支出</h2>${E.length?`<div class="row" style="flex-wrap:nowrap;gap:10px">${pie(E,tot)}<div style="flex:1;min-width:0">${E.map(([k,n],i)=>`<div class="row sp" onclick="selC(${i})" style="cursor:pointer;flex-wrap:nowrap;padding:3px 0;${CSEL&&CSEL!==k?'opacity:.45':''}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PAL[i%PAL.length]}"></i> ${icon(k)}${e(k)}</span><span class="mu" style="white-space:nowrap">${Math.round(n/tot*100)}%・${money(n)}</span></div>`).join('')}</div></div>
+ ${spendCal(f)}<div class="card"><h2>分類支出</h2>${E.length?`<div class="row" style="flex-wrap:nowrap;gap:10px">${pie(E,tot)}<div style="flex:1;min-width:0">${E.map(([k,n],i)=>`<div class="row sp" onclick="selC(${i})" style="cursor:pointer;flex-wrap:nowrap;padding:3px 0;${CSEL&&CSEL!==k?'opacity:.45':''}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PAL[i%PAL.length]}"></i> ${icon(k)}${e(k)}</span><span class="mu" style="white-space:nowrap">${Math.round(n/tot*100)}%・${money(n)}</span></div>`).join('')}</div></div>
  ${CSEL?`<h2 style="margin-top:10px">${icon(CSEL)} ${e(CSEL)} 明細</h2>${det.map(t=>trow(t)).join('')}`:'<div class="mu" style="margin-top:6px">點圓餅圖或分類,可以看該類別的明細</div>'}`:'<div class="mu">這個月還沒有支出 (´・ω・`)</div>'}</div>
  ${txForm()}
  <div class="card"><h2>本月紀錄 <span class="mu">(點一下可修改)</span></h2>${L.map(t=>trow(t)).join('')||'<div class="mu">空空的</div>'}</div>`}
