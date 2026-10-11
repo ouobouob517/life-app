@@ -32,6 +32,7 @@ nav a{flex:1;text-align:center;font-size:12px;padding:4px;border-radius:12px;col
 details summary{cursor:pointer;color:var(--ac);font-weight:600;margin:6px 0}
 .warn{color:#e0803a}html{background:var(--bg)}
 .tr{display:grid;grid-template-columns:40px 80px 1fr 86px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--ac2);cursor:pointer}.tr>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.am{text-align:right;font-variant-numeric:tabular-nums}
+.hi{display:inline-block;vertical-align:middle;background-image:url(hicons.webp);background-repeat:no-repeat;flex:none}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0}.cw{text-align:center;font-size:12px;color:var(--mu);padding:2px}
 .cd{position:relative;height:58px;font-size:12px;cursor:pointer;border-radius:8px}.cd.sel{background:var(--ac2)}.cd b{position:absolute;top:2px;left:50%;transform:translateX(-50%);min-width:20px;text-align:center;border-radius:99px;font-weight:600}.cd.td b{background:var(--ac);color:#fff}
 .cd i{position:absolute;display:block}.pb{left:0;right:0;bottom:19px;height:9px;background:var(--ac)}.pb.s{left:6px;border-radius:9px 0 0 9px}.pb.e{right:6px;border-radius:0 9px 9px 0}.pb.s.e{border-radius:9px}.pb.pr{background:var(--ac2);box-shadow:inset 0 0 0 1.5px var(--ac)}
@@ -49,8 +50,15 @@ const EMO=['🍜','🧋','☕','🍰','🛒','👕','📚','🎁','🐶','🐱',
 const THEMES=[['peach','蜜桃粉'],['milk','奶茶色'],['mint','薄荷綠'],['sky','天空藍'],['lavender','薰衣草'],['lemon','檸檬黃'],['night','夜空紫'],['cocoa','可可棕']];
 const DEF={cfg:{mods:{fin:1,home:1,health:1,period:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px',cardClose:23,cardPay:10,prof:{sex:'f',age:'',h:'',act:'1.375'},cycle:28,periodAhead:3,periodRemind:true,contraWear:21,contraGap:7,contraRemind:true,contraType:'避孕環',cal:{period:1,predict:1,contra:1,log:1,food:0}},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},loans:[],food:[],period:[],rems:[],contra:[],myfoods:[],cards:[{id:'c1',name:'國泰',close:23,pay:10},{id:'c2',name:'華南',close:23,pay:10},{id:'c3',name:'其他',close:23,pay:10}],cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
 function load(){try{const s=JSON.parse(localStorage.getItem('lifeapp'));if(s){const D=JSON.parse(JSON.stringify(DEF));return {...D,...s,cfg:{...D.cfg,...s.cfg,mods:{...D.cfg.mods,...s.cfg.mods}}}}}catch(x){}return JSON.parse(JSON.stringify(DEF))}
+const HE=['📊','📒','🛒','🏋️','⚙️','🍽️','🧋','🚗','🧻','🩺','🏠','🎮','📦','✨','👨‍👩‍👧','🍳','🛁','🛏️','🗄️','🧊','🧹','🚽','🌿','🍎','😊','💧','⏰','💗','😢','😆','😰','😠','😮‍💨','🥳','💐'];
+function ic(v,z=22){if(typeof v==='string'&&v.startsWith('h:')){const n=+v.slice(2);return `<i class="hi" style="width:${z}px;height:${z}px;background-size:${5*z}px ${7*z}px;background-position:-${(n%5)*z}px -${Math.floor(n/5)*z}px"></i>`}return v||''}
+const em=v=>typeof v==='string'&&v.startsWith('h:')?HE[+v.slice(2)]:v;
+const PICK=()=>[...Array(35).keys()].map(n=>'h:'+n).concat(EMO);
+function vlab(k){return k==='s'?ic('h:14',20)+' 家庭':vname[k]}
+const OLDI={out:{餐飲:['🍜','h:5'],飲料:['🧋','h:6'],交通:['🚌','h:7'],日用品:['🧴','h:8'],醫療:['💊','h:9'],房租:['🏠','h:10'],娛樂:['🎮','h:11'],其他:['🐾','h:12']},item:{清潔:['🧼','h:20'],衛浴:['🛁','h:21'],廚房:['🍳','h:15'],保健品:['💊','h:22'],食品:['🥬','h:23'],其他:['🐾','h:12']},loc:{廚房:['🍳','h:15'],浴室:['🛁','h:16'],客廳:['🛋️','h:10'],臥室:['🛏️','h:17'],儲藏室:['📦','h:18'],冰箱:['🧊','h:19']}};
+function migIcons(){['out','item','loc'].forEach(k=>(S.cats[k]||[]).forEach(c=>{const m=OLDI[k][c[0]];if(m&&c[1]===m[0])c[1]=m[1]}))}
 const DEFLOC=()=>[['廚房','🍳'],['浴室','🛁'],['客廳','🛋️'],['臥室','🛏️'],['儲藏室','📦'],['冰箱','🧊']];
-let S=load(),tab='home',view='all';S.cats.loc=S.cats.loc||DEFLOC();
+let S=load(),tab='home',view='all';S.cats.loc=S.cats.loc||DEFLOC();migIcons();
 let tmr,busy=0,ST={};const raw=()=>{try{localStorage.setItem('lifeapp',JSON.stringify(S))}catch(x){}};const save=()=>{raw();clearTimeout(tmr);tmr=setTimeout(sync,2500)};
 const uid=()=>Math.random().toString(36).slice(2,9);
 const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
@@ -59,10 +67,10 @@ const inView=t=>view==='all'||(view==='p'&&t.scope==='p')||(view==='s'&&t.scope=
 const vname={all:'全部',p:'我的',s:'家庭'};
 
 const SEL={},NE={};
-const icon=c=>(S.cats.out.concat(S.cats.item).find(x=>x[0]===c)||[0,c==='收入'?'💰':c==='借出款'?'🤝':'🏷️'])[1];
-const catOpts=(k,cur)=>S.cats[k].map(c=>`<option value="${e(c[0])}" ${(cur||SEL[k])===c[0]?'selected':''}>${c[1]} ${e(c[0])}</option>`).join('')+`<option value="__new">＋新增${k==='loc'?'位置':'類別'}…</option>`;
+const icon=c=>ic((S.cats.out.concat(S.cats.item).find(x=>x[0]===c)||[0,c==='收入'?'h:33':c==='借出款'?'h:27':'🏷️'])[1]);
+const catOpts=(k,cur)=>S.cats[k].map(c=>`<option value="${e(c[0])}" ${(cur||SEL[k])===c[0]?'selected':''}>${em(c[1])} ${e(c[0])}</option>`).join('')+`<option value="__new">＋新增${k==='loc'?'位置':'類別'}…</option>`;
 const onCat=k=>{if(v({out:'a_cat',item:'i_cat',loc:'i_loc'}[k])==='__new')$('nc_'+k).style.display='block';else if(k==='out')pickCat()};
-const ncUI=k=>`<div id="nc_${k}" class="card" style="display:none;margin:8px 0;background:var(--bg)"><input id="ncn_${k}" placeholder="${k==='loc'?'新位置名稱':'新類別名稱'}" style="width:100%"><div class="row" style="margin:8px 0">${EMO.map(m=>`<span class="chip" style="font-size:18px" onclick="NE['${k}']='${m}';this.parentNode.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">${m}</span>`).join('')}</div><button class="s" onclick="addCat('${k}')">新增這個類別</button></div>`;
+const ncUI=k=>`<div id="nc_${k}" class="card" style="display:none;margin:8px 0;background:var(--bg)"><input id="ncn_${k}" placeholder="${k==='loc'?'新位置名稱':'新類別名稱'}" style="width:100%"><div class="row" style="margin:8px 0">${PICK().map(m=>`<span class="chip" style="font-size:18px;padding:3px 6px" onclick="NE['${k}']='${m}';this.parentNode.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">${ic(m,26)}</span>`).join('')}</div><button class="s" onclick="addCat('${k}')">新增這個類別</button></div>`;
 function addCat(k){const n=v('ncn_'+k).trim();if(!n)return;if(!S.cats[k].find(c=>c[0]===n))S.cats[k].push([n,NE[k]||'🏷️']);SEL[k]=n;save();render()}
 /* ---------- finance ---------- */
 let EDT=null,EIT=null,MON=td().slice(0,7),CSEL='',LSEL='',CL=[],ELG=null,FSUB='gen',CSELC='',SSEL='';
@@ -112,7 +120,7 @@ function pGen(){const f=fin(MON),bal=f.inc-f.out,cats={};
  f.cur.filter(t=>t.type==='out').forEach(t=>cats[t.cat]=(cats[t.cat]||0)+t.amt);
  const E=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=E.reduce((a,x)=>a+x[1],0),bp=S.cfg.budget?Math.min(100,f.out/S.cfg.budget*100):0;CL=E.map(x=>x[0]);
  const L=f.cur.slice().sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:0),det=L.filter(t=>t.type==='out'&&t.cat===CSEL),c=CC();
- return `<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vname[k]}</span>`).join('')}</div>
+ return `<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vlab(k)}</span>`).join('')}</div>
  <div class="row sp" style="margin-bottom:10px"><button class="s g" onclick="MON=addM(MON,-1);CSEL='';EDT=null;render()">◀</button><b>${MON.slice(0,4)} 年 ${+MON.slice(5)} 月</b><button class="s g" onclick="MON=addM(MON,1);CSEL='';EDT=null;render()">▶</button></div>
  <div class="card"><div class="row sp"><div><div class="mu">結餘(${vname[view]})</div><div class="big">${money(bal)}</div></div><div class="mu" style="text-align:right">收入 ${money(f.inc)}${f.carry?`<br>含上月結轉 ${money(f.carry)}`:''}<br>支出 ${money(f.out)}</div></div>
  <div class="bar" style="margin:10px 0 4px"><i style="width:${bp}%"></i></div><div class="mu">預算 ${money(S.cfg.budget)},已用 ${Math.round(bp)}% ${bp>=100?'(超過囉,下個月再調整就好 (・ω・))':''}</div></div>
@@ -121,7 +129,7 @@ function pGen(){const f=fin(MON),bal=f.inc-f.out,cats={};
  ${txForm()}
  <div class="card"><h2>本月紀錄 <span class="mu">(點一下可修改)</span></h2>${L.map(t=>trow(t)).join('')||'<div class="mu">空空的</div>'}</div>`}
 
-const vch=()=>`<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vname[k]}</span>`).join('')}</div>`;
+const vch=()=>`<div class="row" style="margin-bottom:10px">${['all','p','s'].map(k=>`<span class="chip ${view===k?'on':''}" onclick="view='${k}';render()">${vlab(k)}</span>`).join('')}</div>`;
 function addCard(){const n=v('cd_n').trim();if(!n)return;S.cards.push({id:uid(),name:n,owner:v('cd_o').trim(),close:+v('cd_c')||23,pay:+v('cd_p')||10});save();render();toast('已新增卡片')}
 function updCard(id,k,x){const c=S.cards.find(z=>z.id===id);c[k]=k==='name'?(x.trim()||c.name):k==='owner'?x.trim():k==='hide'?x:Math.min(31,Math.max(1,+x||c[k]));save();render()}
 function delCard(id){if(confirm('刪除這張卡?原本的刷卡紀錄會變成「未指定」')){S.cards=S.cards.filter(c=>c.id!==id);save();render()}}
@@ -158,7 +166,7 @@ function pLoan(){const L=S.loans,F=L.filter(l=>LSHOW==='all'||remain(l)>0.001),l
  ${r>0.001?`<details><summary>記錄還款</summary><div class="row"><input id="ra_${l.id}" type="number" value="${r}" placeholder="還款金額"><input id="rd_${l.id}" type="date" value="${td()}"></div><input id="rn_${l.id}" placeholder="購買的東西/備註(可不填)" style="width:100%;margin-top:6px"><label class="li"><span class="mu">同時記一筆收入</span><input id="ri_${l.id}" type="checkbox" style="flex:none"></label><button class="s" onclick="repay('${l.id}')">從借出款扣除</button></details>`:''}
  ${(l.repays||[]).length?`<details><summary>還款紀錄 (${l.repays.length})</summary>${l.repays.map((x,k)=>`<div class="li"><span class="mu">${x.d} 還 ${money(x.amt)}${x.item?'・'+e(x.item):''}</span><a class="mu" onclick="delRepay('${l.id}',${k})">✕</a></div>`).join('')}</details>`:''}
  <div class="row" style="margin-top:8px"><button class="s g" onclick="editLoan('${l.id}')">✏️ 修改</button><button class="s g" onclick="delLoan('${l.id}')">刪除</button></div></div>`}).join('')||'<div class="mu">還沒有借出款紀錄</div>'}`}
-const FSEG=()=>`<h1>💰 記帳</h1><div class="row" style="margin-bottom:10px"><span class="chip ${FSUB==='gen'?'on':''}" onclick="FSUB='gen';render()">📒 一般記帳</span><span class="chip ${FSUB==='card'?'on':''}" onclick="FSUB='card';render()">💳 信用卡</span><span class="chip ${FSUB==='loan'?'on':''}" onclick="FSUB='loan';render()">🤝 借出款</span></div>`;
+const FSEG=()=>`<h1>${ic('h:1',32)} 記帳</h1><div class="row" style="margin-bottom:10px"><span class="chip ${FSUB==='gen'?'on':''}" onclick="FSUB='gen';render()">${ic('h:1',18)} 一般記帳</span><span class="chip ${FSUB==='card'?'on':''}" onclick="FSUB='card';render()">💳 信用卡</span><span class="chip ${FSUB==='loan'?'on':''}" onclick="FSUB='loan';render()">${ic('h:27',18)} 借出款</span></div>`;
 function pFin(){return FSEG()+(FSUB==='card'?pCard():FSUB==='loan'?pLoan():pGen())}
 
 /* ---------- household ---------- */
@@ -167,7 +175,7 @@ const expTxt=x=>`${e(x.i.name)}(${x.n<0?'已過期 '+(-x.n)+' 天':x.n===0?'今�
 const stat=it=>{const us=(it.uses||[]).filter(u=>u.end),avg=us.length?us.reduce((a,u)=>a+days(u.open,u.end),0)/us.length:0,
  op=(it.uses||[]).find(u=>!u.end),left=op&&avg?Math.round(avg-days(op.open,td())):null;
  return {avg,op,left,low:(it.stock||0)<=0&&!op||(left!==null&&left<=7)}};
-const locIcon=n=>((S.cats.loc||[]).find(x=>x[0]===n)||[0,'📍'])[1];
+const locIcon=n=>ic(((S.cats.loc||[]).find(x=>x[0]===n)||[0,'📍'])[1]);
 function addItem(){const n=v('i_name').trim();if(!n||v('i_cat')==='__new'||v('i_loc')==='__new')return;const o={name:n,cat:v('i_cat'),loc:v('i_loc')};
  if(EIT)Object.assign(S.items.find(x=>x.id===EIT),o);else S.items.push({id:uid(),...o,stock:0,buys:[],uses:[]});EIT=null;save();render();toast('已儲存 ✨')}
 function editItem(id){const it=S.items.find(x=>x.id===id);if(it.loc&&!S.cats.loc.find(x=>x[0]===it.loc))S.cats.loc.push([it.loc,'📍']);EIT=id;render();setTimeout(()=>{const x=$('itf');x&&x.scrollIntoView({behavior:'smooth'})},50)}
@@ -187,9 +195,9 @@ function itemForm(){const it=S.items.find(x=>x.id===EIT)||{name:'',cat:'',loc:''
  return `<div class="card" id="itf"><h2>${EIT?'✏️ 修改品項':'新增品項'}</h2><div class="row"><input id="i_name" placeholder="名稱" value="${e(it.name)}"><select id="i_cat" onchange="onCat('item')">${catOpts('item',it.cat)}</select><select id="i_loc" onchange="onCat('loc')"><option value="">📍 存放位置</option>${catOpts('loc',it.loc)}</select></div>${ncUI('item')}${ncUI('loc')}
  <div class="row" style="margin-top:8px"><button style="flex:1" onclick="addItem()">${EIT?'儲存修改':'加入'}</button>${EIT?'<button class="g" onclick="EIT=null;render()">取消</button>':''}</div></div>`}
 function pHome(){const L=S.items,cl=S.cats.loc,F=LSEL==='__none'?L.filter(i=>!i.loc):LSEL?L.filter(i=>i.loc===LSEL):L,none=L.filter(i=>!i.loc).length;
- return `<h1>🧺 日用品</h1><div class="card"><h2>🛒 待買清單</h2>${L.filter(i=>stat(i).low).map(i=>`<div class="li"><span>${e(i.name)}</span><span class="mu">${e(i.loc)}</span></div>`).join('')||'<div class="mu">目前都夠用 (๑˃ᴗ˂)ﻭ</div>'}</div>
- ${expSoon().length?`<div class="card"><h2>⏰ 快過期</h2>${expSoon().map(x=>`<div class="li"><span class="warn">${expTxt(x)}</span><span class="mu">${e(x.i.loc)}</span></div>`).join('')}</div>`:''}
- <div class="card"><h2>📍 存放位置</h2><div class="row"><span class="chip ${LSEL===''?'on':''}" onclick="selL(-1)">全部 ${L.length}</span>${cl.map((c,i)=>`<span class="chip ${LSEL===c[0]?'on':''}" onclick="selL(${i})">${c[1]} ${e(c[0])} ${L.filter(x=>x.loc===c[0]).length}</span>`).join('')}${none?`<span class="chip ${LSEL==='__none'?'on':''}" onclick="selL(-2)">未設定 ${none}</span>`:''}</div>
+ return `<h1>${ic('h:2',32)} 日用品</h1><div class="card"><h2>${ic('h:2',22)} 待買清單</h2>${L.filter(i=>stat(i).low).map(i=>`<div class="li"><span>${e(i.name)}</span><span class="mu">${e(i.loc)}</span></div>`).join('')||'<div class="mu">目前都夠用 (๑˃ᴗ˂)ﻭ</div>'}</div>
+ ${expSoon().length?`<div class="card"><h2>${ic('h:26',22)} 快過期</h2>${expSoon().map(x=>`<div class="li"><span class="warn">${expTxt(x)}</span><span class="mu">${e(x.i.loc)}</span></div>`).join('')}</div>`:''}
+ <div class="card"><h2>📍 存放位置</h2><div class="row"><span class="chip ${LSEL===''?'on':''}" onclick="selL(-1)">全部 ${L.length}</span>${cl.map((c,i)=>`<span class="chip ${LSEL===c[0]?'on':''}" onclick="selL(${i})">${ic(c[1],20)} ${e(c[0])} ${L.filter(x=>x.loc===c[0]).length}</span>`).join('')}${none?`<span class="chip ${LSEL==='__none'?'on':''}" onclick="selL(-2)">未設定 ${none}</span>`:''}</div>
  ${LSEL?`<div class="mu" style="margin-top:8px">${LSEL==='__none'?'未設定位置':e(LSEL)} 放了:${F.map(i=>e(i.name)).join('、')||'還沒有放東西'}</div>`:''}</div>
  ${itemForm()}
  ${F.map(i=>{const s=stat(i),pl={},id=i.id;i.buys.forEach(b=>{if(b.place&&b.price>0&&(!pl[b.place]||b.price<pl[b.place]))pl[b.place]=b.price});
@@ -240,14 +248,14 @@ function pHealthRaw(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
  <!--S:goal--><div class="card"><h2>我的小目標(可不填)</h2><div class="row"><input id="g_f" type="number" placeholder="目前 kg" value="${e(g.from)}"><input id="g_t" type="number" placeholder="目標 kg" value="${e(g.to)}"><input id="g_d" type="date" value="${e(g.date)}"></div><button class="g" style="margin-top:8px" onclick="saveGoal()">設定</button>${goalCard()}<div class="mu" style="margin-top:6px">這只是陪伴參考,不是考試。減重有疑慮請諮詢醫師或營養師。</div></div>
  <!--S:recent--><div class="card"><h2>最近紀錄</h2>${L.slice(-7).reverse().map(x=>`<div class="li" style="cursor:pointer" onclick="editLog('${x.d}')"><span>${x.d.slice(5)} ${x.mood||''}</span><span class="mu">${x.w?x.w+'kg ':''}${x.water?'💧'+x.water+' ':''}${x.sleep?'😴'+x.sleep+'h ':''}${x.ex?'🏃'+x.ex+'分':''}</span></div>`).join('')||'<div class="mu">還沒有紀錄</div>'}</div>`}
 
-const HSEC={coach:'🐰 小助手',cal:'📅 月曆',period:'🌸 生理期',contra:'⚪',food:'🍽️ 飲食小助手',log:'📝 今日記錄',trend:'📈 體重趨勢',goal:'🎯 小目標',recent:'🕘 最近紀錄'};
+const HSEC={coach:'🐰 小助手',cal:ic('h:13',20)+' 月曆',period:ic('h:34',20)+' 生理期',contra:'⚪',food:ic('h:5',20)+' 飲食小助手',log:ic('h:24',20)+' 今日記錄',trend:ic('h:0',20)+' 體重趨勢',goal:ic('h:3',20)+' 小目標',recent:'🕘 最近紀錄'};
 const hlay=()=>{const cur=(S.cfg.hlay||[]).filter(x=>HSEC[x.id]),ids=cur.map(x=>x.id);Object.keys(HSEC).forEach(k=>{if(!ids.includes(k))cur.push({id:k,show:1})});return cur};
 function hmove(i,d){const L=hlay(),j=i+d;if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];S.cfg.hlay=L;save();render()}
 function hshow(i,x){const L=hlay();L[i].show=x?1:0;S.cfg.hlay=L;save();render()}
 function goHL(){tab='set';render();setTimeout(()=>{const x=$('hl');x&&x.scrollIntoView({behavior:'smooth'})},50)}
 function hlayCard(){return `<div class="card" id="hl"><h2>🌿 健康頁版面</h2><div class="mu" style="margin-bottom:6px">勾選要顯示的區塊,用 ↑ ↓ 調整順序</div>${hlay().map((x,i)=>`<div class="li"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" style="flex:none" ${x.show?'checked':''} onchange="hshow(${i},this.checked)">${HSEC[x.id]}</label><span style="white-space:nowrap"><button class="s g" onclick="hmove(${i},-1)">↑</button> <button class="s g" onclick="hmove(${i},1)">↓</button></span></div>`).join('')}</div>`}
 function pHealth(){const parts={};let id='_';pHealthRaw().split(/<!--S:(\w+)-->/).forEach((x,i)=>{if(i%2)id=x;else parts[i?id:'_']=x});
- return `<div class="row sp"><h1 style="margin:6px 0 12px">🌿 健康</h1><a class="mu" onclick="goHL()">⚙️ 調整版面</a></div>`+hlay().filter(x=>x.show).map(x=>parts[x.id]||'').join('')}
+ return `<div class="row sp"><h1 style="margin:6px 0 12px">${ic('h:9',32)} 健康</h1><a class="mu" onclick="goHL()">⚙️ 調整版面</a></div>`+hlay().filter(x=>x.show).map(x=>parts[x.id]||'').join('')}
 let CM=td().slice(0,7),CD='';const RING='#5aa9f0',OUTC='#f2994a';
 const periodEnd=x=>x.e||(x.s<=td()&&days(x.s,td())<=10?td():x.s);
 function dayInfo(ds,P){const r={},pe=S.period.find(x=>x.s&&x.s<=ds&&ds<=periodEnd(x));
@@ -278,7 +286,7 @@ function calCard(){const Lc=S.cfg.cal||{},pm=S.cfg.mods.period,[y,m]=CM.split('-
   cells.push(`<div class="cd${ds===td()?' td':''}${ds===CD?' sel':''}" onclick="CD=CD==='${ds}'?'':'${ds}';render()">${h}<span class="dts">${dots}</span></div>`)}
  const ch=(k,l)=>`<span class="chip ${Lc[k]?'on':''}" style="font-size:12px;padding:3px 9px" onclick="S.cfg.cal=S.cfg.cal||{};S.cfg.cal['${k}']=${Lc[k]?0:1};save();render()">${l}</span>`,
  lg=(pm?`<span style="color:var(--ac)">▬</span> 生理期 <span style="color:var(--ac);opacity:.5">▬</span> 預測 <span style="color:${RING}">━</span> 使用中 <span style="color:${RING}">●</span> 放入 <span style="color:${OUTC}">●</span> 取出 <span style="color:${OUTC}">○</span> 預計取出 ・ `:'')+'灰點=有健康紀錄';
- return `<div class="card"><div class="row sp"><h2 style="margin:0">📅 月曆</h2><span class="row" style="gap:6px"><button class="s g" onclick="CM=addM(CM,-1);render()">◀</button><b>${y} 年 ${m} 月</b><button class="s g" onclick="CM=addM(CM,1);render()">▶</button></span></div>
+ return `<div class="card"><div class="row sp"><h2 style="margin:0">${ic('h:13',22)} 月曆</h2><span class="row" style="gap:6px"><button class="s g" onclick="CM=addM(CM,-1);render()">◀</button><b>${y} 年 ${m} 月</b><button class="s g" onclick="CM=addM(CM,1);render()">▶</button></span></div>
  <div class="row" style="margin:8px 0">${pm?ch('period','🌸 生理期')+ch('predict','預測')+ch('contra','⚪'):''}${ch('log','📝 紀錄')}${ch('food','🍽️ 飲食')}</div>
  <div class="cal">${DOW.map(x=>`<div class="cw">${x}</div>`).join('')}${cells.join('')}</div><div class="mu" style="margin-top:6px">${lg}・點日期看詳情</div>${CD?dayPanel(CD,P):''}</div>`}
 function editLog(d){if(!$('h_d'))return toast('請先到「調整版面」顯示「今日記錄」');const r=S.log.find(x=>x.d===d)||{};ELG=d;$('h_d').value=d;$('h_w').value=r.w??'';$('h_wa').value=r.water??'';$('h_s').value=r.sleep??'';$('h_e').value=r.ex??'';$('h_m').value=r.mood||'';$('h_w').scrollIntoView({behavior:'smooth',block:'center'});toast('已載入,修改後按儲存')}
@@ -400,7 +408,7 @@ function foodCard(){const s=foodSum(FD),pr=prof(),lg0=S.log.find(x=>x.d===FD)||{
  
  return `<div style="margin-top:8px">${h}${m.length?`<div class="bub" style="margin-top:8px">${m.join('<br>')}</div>`:''}<div class="mu" style="margin-top:6px">數字只是估算參考,不用追求精準。每天熱量差約 300–500 大卡、每週減 0.3–0.5 公斤,是比較不傷身體的節奏。</div></div>`}
 function foodSection(){const P=S.cfg.prof,o=(a,b,l)=>`<option value="${a}" ${b==a?'selected':''}>${l}</option>`;
- return `<div class="card"><div class="row sp"><h2 style="margin:0">🍽️ 飲食小助手</h2><span class="row" style="gap:6px"><button class="s g" onclick="FD=addDay(FD,-1);render()">◀</button><span>${FD===td()?'今天':FD.slice(5)}</span><button class="s g" onclick="FD=FD<td()?addDay(FD,1):FD;render()">▶</button></span></div>
+ return `<div class="card"><div class="row sp"><h2 style="margin:0">${ic('h:5',22)} 飲食小助手</h2><span class="row" style="gap:6px"><button class="s g" onclick="FD=addDay(FD,-1);render()">◀</button><span>${FD===td()?'今天':FD.slice(5)}</span><button class="s g" onclick="FD=FD<td()?addDay(FD,1):FD;render()">▶</button></span></div>
  <div style="max-height:340px;overflow:auto;margin:8px 0">${foodChat()||'<div class="bub">這天吃了什麼呢?直接告訴我就好,像是「早餐蛋餅加豆漿,午餐雞腿便當」 (๑>◡<๑)</div>'}</div>
  <div class="row" style="flex-wrap:nowrap"><input id="f_in" placeholder="早餐吃了蛋餅和豆漿…" onkeydown="if(event.key==='Enter')sendFood()"><button onclick="sendFood()">送出</button></div>
  <div class="mu" style="margin-top:4px">不認識的食物可以這樣說:「麻辣燙 500大卡」</div>${foodCard()}
@@ -418,7 +426,7 @@ function saveP(){const s0=v('pd_s');if(!s0)return toast('請選開始日期');co
  if(PED)Object.assign(S.period.find(x=>x.id===PED),o);else S.period.push({id:uid(),...o});PED=null;save();render();toast('已儲存 🌸')}
 function savePSet(){S.cfg.cycle=Math.min(60,Math.max(15,+v('ps_c')||28));S.cfg.periodAhead=+v('ps_a')||3;S.cfg.periodRemind=$('ps_r').checked;save();render();toast('已儲存')}
 function periodCard(){if(!S.cfg.mods.period)return'';const P=pstat(),cur=S.period.find(x=>!x.e&&days(x.s,td())<=10),x0=S.period.find(x=>x.id===PED)||{s:td(),e:'',flow:'',note:''},o=(a,b,l)=>`<option value="${a}" ${b===a?'selected':''}>${l}</option>`,L=S.period.slice().sort((a,b)=>a.s<b.s?1:-1).slice(0,12),md=d=>d.slice(5).replace('-','/');
- return `<div class="card"><h2>🌸 生理期</h2><div class="bub">${cur?`今天是生理期第 ${days(cur.s,td())+1} 天,要多休息、多喝溫熱的水喔 (˘ω˘)`:P.last?`目前是週期第 ${days(P.last,td())+1} 天 (๑>◡<๑)`:'還沒有紀錄,生理期開始那天按一下「今天開始」就好 (੭ˊᵕˋ)੭'}${P.last&&!cur?`<br>預計下次:${md(P.next)}(${P.left>0?P.left+' 天後':P.left===0?'就是今天':'已超過 '+(-P.left)+' 天,週期本來就會前後波動,不用擔心 (・ω・)'})`:''}</div>
+ return `<div class="card"><h2>${ic('h:34',22)} 生理期</h2><div class="bub">${cur?`今天是生理期第 ${days(cur.s,td())+1} 天,要多休息、多喝溫熱的水喔 (˘ω˘)`:P.last?`目前是週期第 ${days(P.last,td())+1} 天 (๑>◡<๑)`:'還沒有紀錄,生理期開始那天按一下「今天開始」就好 (੭ˊᵕˋ)੭'}${P.last&&!cur?`<br>預計下次:${md(P.next)}(${P.left>0?P.left+' 天後':P.left===0?'就是今天':'已超過 '+(-P.left)+' 天,週期本來就會前後波動,不用擔心 (・ω・)'})`:''}</div>
  <div class="mu" style="margin:6px 0">平均週期 ${P.avg} 天${P.n?`(依最近 ${P.n} 次)`:'(預設值,記錄幾次後會自動修正)'}・平均經期 ${P.len} 天・只有你看得到</div>
  <div class="row">${cur?`<button onclick="endP('${cur.id}')">今天結束了</button>`:'<button onclick="startP()">今天開始 🌸</button>'}</div>
  ${L.map(x=>`<div class="li"><span>${md(x.s)} ~ ${x.e?md(x.e):'進行中'}${x.e?`(${days(x.s,x.e)+1} 天)`:''} <span class="mu">${x.flow?e(x.flow)+' ':''}${e(x.note)}</span></span><span style="white-space:nowrap"><a class="mu" onclick="editP('${x.id}')">✏️</a> <a class="mu" onclick="delP('${x.id}')">✕</a></span></div>`).join('')}
@@ -432,7 +440,7 @@ function saveRem(){const tx=v('rm_t').trim();if(!tx)return toast('請輸入要�
  if(ty==='weekly'&&!o.days.length)return toast('請至少選一天');if(RED)Object.assign(S.rems.find(x=>x.id===RED),o);else S.rems.push({id:uid(),...o});RED=null;save();render();toast('提醒已儲存 ⏰')}
 function delRem(id){if(!confirm('確定刪除這個提醒?'))return;S.rems=S.rems.filter(x=>x.id!==id);save();render()}
 function remCard(){const r0=S.rems.find(x=>x.id===RED)||{text:'',type:'daily',hour:9,days:[],dom:1,date:td()},o=(a,b,l)=>`<option value="${a}" ${b===a?'selected':''}>${l}</option>`;
- return `<div class="card"><h2>⏰ 自訂提醒(Telegram)</h2>${S.sync.token?'':'<div class="mu warn">要先在上面連結 Telegram 才會收到提醒</div>'}
+ return `<div class="card"><h2>${ic('h:26',22)} 自訂提醒(Telegram)</h2>${S.sync.token?'':'<div class="mu warn">要先在上面連結 Telegram 才會收到提醒</div>'}
  ${S.rems.map(r=>`<div class="li"><span>${e(r.text)} <span class="mu">${remDesc(r)}</span></span><span style="white-space:nowrap"><input type="checkbox" style="flex:none" ${r.on?'checked':''} onchange="S.rems.find(x=>x.id==='${r.id}').on=this.checked;save()"> <a class="mu" onclick="RED='${r.id}';render()">✏️</a> <a class="mu" onclick="delRem('${r.id}')">✕</a></span></div>`).join('')||'<div class="mu">還沒有提醒,例如「吃保健品」「倒垃圾」「幫植物澆水」</div>'}
  <details ${RED?'open':''} style="margin-top:6px"><summary>${RED?'修改提醒':'新增提醒'}</summary><input id="rm_t" placeholder="要提醒的事項" value="${e(r0.text)}" style="width:100%;margin-top:6px">
  <div class="row" style="margin-top:8px"><select id="rm_ty" onchange="remType()">${o('daily',r0.type,'每天')}${o('weekly',r0.type,'每週(固定循環)')}${o('monthly',r0.type,'每月(固定循環)')}${o('once',r0.type,'單次')}</select><select id="rm_h">${[...Array(24).keys()].map(i=>o(i,+r0.hour,i+':00')).join('')}</select></div>
@@ -479,7 +487,7 @@ async function api(path,body){const y=S.sync,r=await fetch(y.api.replace(/\/$/,'
 const docs=()=>{const c={};S.tx.forEach(t=>c['tx:'+t.id]={scope:t.scope,data:t});S.items.forEach(i=>c['item:'+i.id]={scope:'s',data:i});S.log.forEach(l=>c['log:'+l.d]={scope:'p',data:l});S.loans.forEach(l=>c['loan:'+l.id]={scope:'p',data:l});S.food.forEach(x=>c['food:'+x.id]={scope:'p',data:x});S.period.forEach(x=>c['period:'+x.id]={scope:'p',data:x});S.rems.forEach(x=>c['rem:'+x.id]={scope:'p',data:x});S.contra.forEach(x=>c['contra:'+x.id]={scope:'p',data:x});S.myfoods.forEach(x=>c['myfood:'+x.id]={scope:'p',data:x});c.cfg={scope:'p',data:{cfg:S.cfg,mem:S.mem,cats:S.cats,cards:S.cards}};return c};
 function ap(res,y){let n=0;const c=docs(),ks=[];
  for(const d of res.docs){const k=d.k,i=k.indexOf(':'),t=k.slice(0,i),id=k.slice(i+1);
-  if(k==='cfg'){if(!d.del){if(hs(d.data)!==hs(c.cfg.data)){Object.assign(S.cfg,d.data.cfg);S.mem=d.data.mem;S.cats=d.data.cats;S.cats.loc=S.cats.loc||DEFLOC();if(d.data.cards)S.cards=d.data.cards;n++}ks.push(k)}continue}
+  if(k==='cfg'){if(!d.del){if(hs(d.data)!==hs(c.cfg.data)){Object.assign(S.cfg,d.data.cfg);S.mem=d.data.mem;S.cats=d.data.cats;S.cats.loc=S.cats.loc||DEFLOC();migIcons();if(d.data.cards)S.cards=d.data.cards;n++}ks.push(k)}continue}
   const L={tx:S.tx,item:S.items,log:S.log,loan:S.loans,food:S.food,period:S.period,rem:S.rems,contra:S.contra,myfood:S.myfoods}[t];if(!L)continue;const f=t==='log'?'d':'id',j=L.findIndex(x=>x[f]===id);
   if(d.del){if(j>=0){L.splice(j,1);n++}delete y.h[k]}
   else if(j<0){L.push(d.data);n++;ks.push(k)}
@@ -508,7 +516,7 @@ const cloud=()=>{const y=S.sync,m=ST.me;let h='<div class="card"><h2>☁️ 雲�
  if(!y.api)h+='<div class="mu">貼上後端網址(部署 Worker 後取得)</div><div class="row"><input id="s_api" placeholder="https://life-api.xxx.workers.dev"><button class="s" onclick="setApi()">儲存</button></div>';
  else if(!y.token)h+='<button onclick="startPair()">連結 Telegram</button>';
  else if(ST.code)h+=`<div class="bub">請在 Telegram 對 @${e(ST.bot)} 傳送這組配對碼:<div class="big">${ST.code}</div>10 分鐘內有效,成功後會自動更新。</div>`;
- else if(m&&m.bound){h+=`<div class="mu">✅ 已連線・家庭成員:${m.members.map(e).join('、')}</div>
+ else if(m&&m.bound){h+=`<div class="mu">✅ 已連線・${ic('h:14',20)} 家庭成員:${m.members.map(e).join('、')}</div>
  <div class="row" style="margin:8px 0"><button class="s" onclick="sync().then(render)">立即同步</button><button class="s g" onclick="mkInv()">產生家人邀請碼</button></div>${ST.inv?`<div class="bub">邀請碼 <b>${ST.inv}</b>(24 小時內有效),請家人在自己的 App 輸入。</div>`:''}
  <div class="row" style="margin:8px 0"><input id="j_c" placeholder="輸入邀請碼加入家庭"><button class="s" onclick="joinFam()">加入</button></div>
  <h2 style="margin-top:10px">Telegram 提醒</h2><div class="row"><select id="r_h" onchange="savePrefs()">${[...Array(24).keys()].map(i=>`<option value="${i}" ${+m.prefs.hour===i?'selected':''}>每天 ${i}:00</option>`).join('')}</select></div>
@@ -518,24 +526,24 @@ const cloud=()=>{const y=S.sync,m=ST.me;let h='<div class="card"><h2>☁️ 雲�
 /* ---------- overview & settings ---------- */
 function pMain(){const m=S.cfg.mods,t=td(),f=fin(t.slice(0,7)),today=S.tx.filter(x=>x.d===t&&x.type==='out').reduce((a,x)=>a+x.amt,0);
  return `<h1>${mas(30)} 嗨,${e(S.cfg.name)}!</h1>
- ${m.fin?`<div class="card" onclick="tab='fin';render()"><div class="mu">💰 今日支出</div><div class="big">${money(today)}</div><div class="mu">本月結餘 ${money(f.inc-f.out)}</div><div class="mu">💳 ${cardLine()}</div>${loanTot()>0.001?`<div class="mu">🤝 借出中 ${money(loanTot())}</div>`:''}</div>`:''}
- ${m.home?`<div class="card" onclick="tab='home';render()"><div class="mu">🧺 快用完的品項</div>${S.items.filter(i=>stat(i).low).map(i=>`<div>${e(i.name)}</div>`).join('')||'<div class="mu">目前都夠用 (๑˃ᴗ˂)ﻭ</div>'}${expSoon().map(x=>`<div class="warn">⏰ ${expTxt(x)}</div>`).join('')}</div>`:''}
- ${m.health?`<div class="card" onclick="tab='health';render()"><div class="mu">🌿 小助手說</div><div class="bub" style="margin-top:6px">${coach()}</div></div>`:''}
+ ${m.fin?`<div class="card" onclick="tab='fin';render()"><div class="mu">${ic('h:1',20)} 今日支出</div><div class="big">${money(today)}</div><div class="mu">本月結餘 ${money(f.inc-f.out)}</div><div class="mu">💳 ${cardLine()}</div>${loanTot()>0.001?`<div class="mu">🤝 借出中 ${money(loanTot())}</div>`:''}</div>`:''}
+ ${m.home?`<div class="card" onclick="tab='home';render()"><div class="mu">${ic('h:2',20)} 快用完的品項</div>${S.items.filter(i=>stat(i).low).map(i=>`<div>${e(i.name)}</div>`).join('')||'<div class="mu">目前都夠用 (๑˃ᴗ˂)ﻭ</div>'}${expSoon().map(x=>`<div class="warn">⏰ ${expTxt(x)}</div>`).join('')}</div>`:''}
+ ${m.health?`<div class="card" onclick="tab='health';render()"><div class="mu">${ic('h:9',20)} 小助手說</div><div class="bub" style="margin-top:6px">${coach()}</div></div>`:''}
  ${!m.fin&&!m.home&&!m.health?'<div class="card mu">到「設定」開啟想用的功能吧 ✨</div>':''}`}
 function setMod(k,x){S.cfg.mods[k]=x?1:0;save();render()}
-function pSet(){const c=S.cfg;return `<h1>⚙️ 設定</h1><div class="card"><h2>顯示的功能</h2>${[['fin','💰 記帳'],['home','🧺 日用品'],['health','🌿 健康'],['period','🌸 生理期紀錄']].map(([k,n])=>`<label class="li"><span>${n}</span><input type="checkbox" style="flex:none" ${c.mods[k]?'checked':''} onchange="setMod('${k}',this.checked)"></label>`).join('')}</div>
+function pSet(){const c=S.cfg;return `<h1>${ic('h:4',32)} 設定</h1><div class="card"><h2>顯示的功能</h2>${[['fin','💰 記帳'],['home','🧺 日用品'],['health','🌿 健康'],['period','🌸 生理期紀錄']].map(([k,n])=>`<label class="li"><span>${n}</span><input type="checkbox" style="flex:none" ${c.mods[k]?'checked':''} onchange="setMod('${k}',this.checked)"></label>`).join('')}</div>
  <div class="card"><h2>風格</h2><div class="row">${THEMES.map(([k,n])=>`<span class="chip ${c.theme===k?'on':''}" onclick="S.cfg.theme='${k}';save();render()">${n}</span>`).join('')}</div>
  <div class="mu" style="margin:10px 0 4px">自訂主色</div><div class="row"><input type="color" style="flex:none;padding:2px;width:48px;height:36px" value="${c.custom||'#ff8fa3'}" onchange="S.cfg.custom=this.value;save();render()"><button class="g s" onclick="S.cfg.custom='';save();render()">還原主題色</button></div>
  <div class="mu" style="margin:10px 0 4px">圓角</div><div class="row">${[['8px','方正'],['18px','圓潤'],['30px','超圓']].map(([k,n])=>`<span class="chip ${c.round===k?'on':''}" onclick="S.cfg.round='${k}';save();render()">${n}</span>`).join('')}</div>
  <div class="mu" style="margin:10px 0 4px">吉祥物</div><div class="row">${['🐰','🐱','🐻','🐶','🦊','🐼','🐥'].map(k=>`<span class="chip ${c.mascot===k?'on':''}" onclick="S.cfg.mascot='${k}';save();render()">${k}</span>`).join('')}${['hamster','sheep'].map(k=>`<span class="chip ${c.mascot===k?'on':''}" style="padding:3px 8px" onclick="S.cfg.mascot='${k}';save();render()"><img src="mascot-${k}.webp" alt="" style="width:30px;height:30px;border-radius:50%;vertical-align:middle"></span>`).join('')}</div></div>
- <div class="card"><h2>我的類別</h2>${[['out','記帳'],['item','日用品'],['loc','存放位置']].map(([k,n])=>`<div class="mu" style="margin-top:6px">${n}</div><div class="row">${S.cats[k].map((x,i)=>`<span class="chip">${x[1]} ${e(x[0])} <a onclick="delCat('${k}',${i})">✕</a></span>`).join('')}</div>`).join('')}<div class="mu" style="margin-top:8px">新增類別:到記帳或日用品的類別選單,選「＋新增類別」</div></div>
+ <div class="card"><h2>我的類別</h2>${[['out','記帳'],['item','日用品'],['loc','存放位置']].map(([k,n])=>`<div class="mu" style="margin-top:6px">${n}</div><div class="row">${S.cats[k].map((x,i)=>`<span class="chip">${ic(x[1],20)} ${e(x[0])} <a onclick="delCat('${k}',${i})">✕</a></span>`).join('')}</div>`).join('')}<div class="mu" style="margin-top:8px">新增類別:到記帳或日用品的類別選單,選「＋新增類別」</div></div>
  <div class="card"><h2>💳 預設結帳日/繳款日</h2><div class="row"><label class="mu" style="flex:1 1 120px;display:block">結帳日(每月幾號)<input type="number" min="1" max="31" style="width:100%" value="${c.cardClose}" onchange="S.cfg.cardClose=Math.min(31,Math.max(1,+this.value||23));save();render()"></label><label class="mu" style="flex:1 1 120px;display:block">繳款日(每月幾號)<input type="number" min="1" max="31" style="width:100%" value="${c.cardPay}" onchange="S.cfg.cardPay=Math.min(31,Math.max(1,+this.value||10));save();render()"></label></div><div class="mu" style="margin-top:6px">結帳日(含)以前的刷卡算本期,隔天起算下一期。繳款日若比結帳日小,就是結帳隔月才繳。這是沒指定卡片時的預設值,各卡片可在「記帳 → 信用卡 → 管理信用卡」分別設定。</div></div>
  <div class="card"><h2>個人設定</h2><div class="row"><input value="${e(c.name)}" placeholder="暱稱" onchange="S.cfg.name=this.value;save()"><input type="number" value="${c.budget}" onchange="S.cfg.budget=+this.value||0;save()"></div><div class="mu">左:暱稱(顯示為記帳者) 右:每月預算</div>
  <label class="li"><span>上月結餘自動轉為本月收入</span><input type="checkbox" style="flex:none" ${c.carry?'checked':''} onchange="S.cfg.carry=this.checked?1:0;save();render()"></label></div>
  ${cloud()}${remCard()}${hlayCard()}<div class="card mu">資料先存在這台裝置,連上雲端後會自動同步。<br><button class="g s" style="margin-top:8px" onclick="if(confirm('確定清除全部資料?')){S=JSON.parse(JSON.stringify(DEF));save();render()}">清除全部資料</button></div>`}
 
 function render(){const m=S.cfg.mods;if(tab==='set'&&S.sync.token&&!ST.me&&!ST.code){ST.me={};loadMe()}document.documentElement.dataset.theme=S.cfg.theme;const rs=document.documentElement.style;rs.setProperty('--r',S.cfg.round||'18px');S.cfg.custom?(rs.setProperty('--ac',S.cfg.custom),rs.setProperty('--ac2','color-mix(in srgb,'+S.cfg.custom+' 22%,var(--card))')):(rs.removeProperty('--ac'),rs.removeProperty('--ac2'));{const mt=document.querySelector('meta[name=theme-color]');if(mt)mt.content=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#fff3ee'}
- const T=[['main','🏠','總覽'],m.fin&&['fin','💰','記帳'],m.home&&['home','🧺','日用品'],m.health&&['health','🌿','健康'],['set','⚙️','設定']].filter(Boolean);
+ const T=[['main',ic('h:10',28),'總覽'],m.fin&&['fin',ic('h:1',28),'記帳'],m.home&&['home',ic('h:2',28),'日用品'],m.health&&['health',ic('h:9',28),'健康'],['set',ic('h:4',28),'設定']].filter(Boolean);
  if(tab==='home'&&!m.home&&!T.find(x=>x[0]==='home'))tab='main';
  if(!T.find(x=>x[0]===tab))tab='main';
  $('nav').innerHTML=T.map(([k,i,n])=>`<a class="${tab===k?'on':''}" onclick="tab='${k}';render()"><b>${i}</b>${n}</a>`).join('');
