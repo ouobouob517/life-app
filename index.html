@@ -47,7 +47,7 @@ const IC=Object.fromEntries(OUT.concat([['收入','💰']]));
 const ICAT=['清潔','衛浴','廚房','保健品','食品','其他'];
 const EMO=['🍜','🧋','☕','🍰','🛒','👕','📚','🎁','🐶','🐱','✈️','💡','🧼','🥬','🪥','💄','🧸','🏋️','🧾','🎬','🚗','🌸'];
 const THEMES=[['peach','蜜桃粉'],['milk','奶茶色'],['mint','薄荷綠'],['sky','天空藍'],['lavender','薰衣草'],['lemon','檸檬黃'],['night','夜空紫'],['cocoa','可可棕']];
-const DEF={cfg:{mods:{fin:1,home:1,health:1,period:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px',cardClose:23,cardPay:10,prof:{sex:'f',age:'',h:'',act:'1.375'},cycle:28,periodAhead:3,periodRemind:true,contraWear:21,contraGap:7,contraRemind:true,contraType:'避孕環',cal:{period:1,predict:1,contra:1,log:1,food:0}},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},loans:[],food:[],period:[],rems:[],contra:[],cards:[{id:'c1',name:'國泰',close:23,pay:10},{id:'c2',name:'華南',close:23,pay:10},{id:'c3',name:'其他',close:23,pay:10}],cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
+const DEF={cfg:{mods:{fin:1,home:1,health:1,period:1},theme:'peach',name:'我',budget:20000,carry:1,goal:{from:'',to:'',date:''},mascot:'🐰',custom:'',round:'18px',cardClose:23,cardPay:10,prof:{sex:'f',age:'',h:'',act:'1.375'},cycle:28,periodAhead:3,periodRemind:true,contraWear:21,contraGap:7,contraRemind:true,contraType:'避孕環',cal:{period:1,predict:1,contra:1,log:1,food:0}},tx:[],items:[],log:[],mem:{房租:'s',日用品:'s'},sync:{api:'',token:'',since:0,h:{}},loans:[],food:[],period:[],rems:[],contra:[],myfoods:[],cards:[{id:'c1',name:'國泰',close:23,pay:10},{id:'c2',name:'華南',close:23,pay:10},{id:'c3',name:'其他',close:23,pay:10}],cats:{out:OUT.map(c=>c.slice()),item:ICAT.map(n=>[n,{清潔:'🧼',衛浴:'🛁',廚房:'🍳',保健品:'💊',食品:'🥬',其他:'🐾'}[n]])}};
 function load(){try{const s=JSON.parse(localStorage.getItem('lifeapp'));if(s){const D=JSON.parse(JSON.stringify(DEF));return {...D,...s,cfg:{...D.cfg,...s.cfg,mods:{...D.cfg.mods,...s.cfg.mods}}}}}catch(x){}return JSON.parse(JSON.stringify(DEF))}
 const DEFLOC=()=>[['廚房','🍳'],['浴室','🛁'],['客廳','🛋️'],['臥室','🛏️'],['儲藏室','📦'],['冰箱','🧊']];
 let S=load(),tab='home',view='all';S.cats.loc=S.cats.loc||DEFLOC();
@@ -217,18 +217,18 @@ function coach(){const L=lg(),t=L.find(x=>x.d===td()),W=L.filter(x=>x.w),m=[];
  if(r.length>=3&&p.length>=3){const d=avgW(r)-avgW(p);m.push(d<-0.05?`這週平均比上週輕了 ${Math.abs(d).toFixed(1)} 公斤,很不錯呢 (๑•̀ㅂ•́)و✧`:`體重本來就會上上下下喔,看一整週的趨勢就好 (੭ˊᵕˋ)੭`)}
  if(t&&t.water>=2000)m.push('水喝得很夠,身體會謝謝你 (≧▽≦)');else if(t&&t.water)m.push('再喝幾口水就更棒囉 (´▽`ʃ♡ƪ)');
  if(t&&t.sleep&&t.sleep<6)m.push('昨晚好像睡得有點少,今天對自己溫柔一點 (˘･_･˘)');
- const g=S.cfg.goal;if(g.from&&g.to&&g.date){const wk=days(td(),g.date)/7,per=wk>0?(g.from-g.to)/wk:99;
-  if(per>1)m.push(`目標每週要減約 ${per.toFixed(1)} 公斤,稍微快了一點。可以把日期放寬些,有需要也可以問問醫師或營養師喔 (・ω・)`)}
+ const g=S.cfg.goal,gf=+g.from,gt=+g.to;if(gf&&gt&&g.date){const Wn=lg().filter(x=>x.w),cur=Wn.length?Wn[Wn.length-1].w:gf,left=cur-gt,wk=days(td(),g.date)/7;
+ if(left>0){if(wk<=0)m.push('設定的目標日期已經到了,可以重新設定一個寬鬆一點的日期喔 ( ˘ω˘ )');else{const per=left/wk;if(per>1)m.push(`目標每週要減約 ${per.toFixed(1)} 公斤,稍微快了一點。可以把日期放寬些,有需要也可以問問醫師或營養師喔 (・ω・)`)}}}
  return m.join('<br>')}
 function pHealthRaw(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
- let svg='';if(W.length>1){const ys=W.map(x=>x.w),mn=Math.floor(Math.min(...ys)-.5),mx=Math.ceil(Math.max(...ys)+.5),L0=36,R0=10,T0=12,B0=26,w=320,h=180,sp=Math.max(1,days(W[0].d,W[W.length-1].d)),
+ let svg='';if(W.length>1){const ys=W.map(x=>x.w),mn=Math.floor(Math.min(...ys)-.5),mx=Math.ceil(Math.max(...ys)+.5),L0=38,R0=26,T0=22,B0=28,w=320,h=190,sp=Math.max(1,days(W[0].d,W[W.length-1].d)),
  X=d=>L0+days(W[0].d,d)/sp*(w-L0-R0),Y=y=>T0+(1-(y-mn)/(mx-mn))*(h-T0-B0),
  ma=W.map((x,i)=>[x.d,avgW(W.slice(Math.max(0,i-6),i+1).map(y=>y.w))]),
  gy=[0,1,2,3].map(i=>mn+(mx-mn)*i/3),xi=[...new Set([0,1/3,2/3,1].map(f=>Math.round(f*(W.length-1))))];
  svg=`<svg viewBox="0 0 ${w} ${h}" width="100%" style="font-size:9px;fill:var(--mu)">
  ${gy.map(g=>`<line x1="${L0}" x2="${w-R0}" y1="${Y(g)}" y2="${Y(g)}" stroke="var(--ac2)"/><text x="${L0-4}" y="${Y(g)+3}" text-anchor="end">${g.toFixed(1)}</text>`).join('')}
  <line x1="${L0}" x2="${L0}" y1="${T0}" y2="${h-B0}" stroke="var(--mu)"/><line x1="${L0}" x2="${w-R0}" y1="${h-B0}" y2="${h-B0}" stroke="var(--mu)"/>
- <text x="${L0-4}" y="8" text-anchor="end">kg</text>
+ <text x="${L0-4}" y="10" text-anchor="end">kg</text>
  ${xi.map(i=>`<text x="${X(W[i].d)}" y="${h-10}" text-anchor="middle">${W[i].d.slice(5).replace('-','/')}</text>`).join('')}
  <polyline points="${W.map(x=>X(x.d)+','+Y(x.w)).join(' ')}" fill="none" stroke="var(--mu)" stroke-opacity=".5" stroke-width="1.5"/>
  ${W.map(x=>`<circle cx="${X(x.d)}" cy="${Y(x.w)}" r="2.5" style="fill:var(--mu)"/>`).join('')}
@@ -240,7 +240,7 @@ function pHealthRaw(){const L=lg(),W=L.filter(x=>x.w).slice(-30),g=S.cfg.goal;
  <!--S:goal--><div class="card"><h2>我的小目標(可不填)</h2><div class="row"><input id="g_f" type="number" placeholder="目前 kg" value="${e(g.from)}"><input id="g_t" type="number" placeholder="目標 kg" value="${e(g.to)}"><input id="g_d" type="date" value="${e(g.date)}"></div><button class="g" style="margin-top:8px" onclick="saveGoal()">設定</button>${goalCard()}<div class="mu" style="margin-top:6px">這只是陪伴參考,不是考試。減重有疑慮請諮詢醫師或營養師。</div></div>
  <!--S:recent--><div class="card"><h2>最近紀錄</h2>${L.slice(-7).reverse().map(x=>`<div class="li" style="cursor:pointer" onclick="editLog('${x.d}')"><span>${x.d.slice(5)} ${x.mood||''}</span><span class="mu">${x.w?x.w+'kg ':''}${x.water?'💧'+x.water+' ':''}${x.sleep?'😴'+x.sleep+'h ':''}${x.ex?'🏃'+x.ex+'分':''}</span></div>`).join('')||'<div class="mu">還沒有紀錄</div>'}</div>`}
 
-const HSEC={coach:'🐰 小助手',cal:'📅 月曆',period:'🌸 生理期',contra:'💊 避孕環/避孕器',food:'🍽️ 飲食小助手',log:'📝 今日記錄',trend:'📈 體重趨勢',goal:'🎯 小目標',recent:'🕘 最近紀錄'};
+const HSEC={coach:'🐰 小助手',cal:'📅 月曆',period:'🌸 生理期',contra:'⚪',food:'🍽️ 飲食小助手',log:'📝 今日記錄',trend:'📈 體重趨勢',goal:'🎯 小目標',recent:'🕘 最近紀錄'};
 const hlay=()=>{const cur=(S.cfg.hlay||[]).filter(x=>HSEC[x.id]),ids=cur.map(x=>x.id);Object.keys(HSEC).forEach(k=>{if(!ids.includes(k))cur.push({id:k,show:1})});return cur};
 function hmove(i,d){const L=hlay(),j=i+d;if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];S.cfg.hlay=L;save();render()}
 function hshow(i,x){const L=hlay();L[i].show=x?1:0;S.cfg.hlay=L;save();render()}
@@ -257,15 +257,15 @@ function dayInfo(ds,P){const r={},pe=S.period.find(x=>x.s&&x.s<=ds&&ds<=periodEn
   if(sd<=ds&&ds<=ed)r.ring={s:sd===ds,e:ed===ds&&!!x.out,rec:x};r.ev=r.ev||[];if(sd===ds)r.ev.push(['in',x]);if(x.out&&x.out.slice(0,10)===ds)r.ev.push(['out',x]);if(!x.out&&x.plan===ds)r.ev.push(['plan',x])});
  return r}
 function calP(k,ds){if(k==='s')S.period.push({id:uid(),s:ds,e:'',flow:'',note:''});else{const r=S.period.filter(x=>!x.e&&x.s<=ds).sort((a,b)=>a.s<b.s?1:-1)[0];if(r)r.e=ds}save();render();toast('已記錄 🌸')}
-function calC(k,ds){const tm=nowL().slice(10);if(k==='in'){const ty=S.cfg.contraType||'避孕環';S.contra.push({id:uid(),type:ty,in:ds+tm,out:'',plan:ty==='避孕環'?addDay(ds,+S.cfg.contraWear||21):'',note:''})}else{const r=S.contra.find(x=>!x.out);if(r)r.out=ds+tm<r.in?r.in:ds+tm}save();render();toast('已記錄 💊')}
+function calC(k,ds){const tm=nowL().slice(10);if(k==='in'){const ty=S.cfg.contraType||'避孕環';S.contra.push({id:uid(),type:ty,in:ds+tm,out:'',plan:ty==='避孕環'?addDay(ds,+S.cfg.contraWear||21):'',note:''})}else{const r=S.contra.find(x=>!x.out);if(r)r.out=ds+tm<r.in?r.in:ds+tm}save();render();toast('已記錄 ⚪')}
 function dayPanel(ds,P){const I=dayInfo(ds,P),t=[],md=ds.slice(5).replace('-','/'),Lg=S.log.find(x=>x.d===ds),fk=foodSum(ds),hasF=S.food.some(x=>x.d===ds&&!x.none&&!x.u),pm=S.cfg.mods.period,act=[];
  if(pm){if(I.per)t.push(`🌸 生理期第 ${days(I.per.rec.s,ds)+1} 天`);else if(I.pr)t.push('🌸 預測的生理期');
-  (I.ev||[]).forEach(([k,x])=>t.push(k==='in'?`💊 放入${x.type}(${x.in.slice(11,16)})`:k==='out'?`💊 取出${x.type}(${x.out.slice(11,16)})`:`💊 預計取出${x.type}`));
-  if(I.ring&&!(I.ev||[]).length)t.push(`💊 ${I.ring.rec.type}使用中(第 ${days(I.ring.rec.in.slice(0,10),ds)+1} 天)`)}
+  (I.ev||[]).forEach(([k,x])=>t.push(k==='in'?`⚪ 放入(${x.in.slice(11,16)})`:k==='out'?`⚪ 取出(${x.out.slice(11,16)})`:`⚪ 預計取出`));
+  if(I.ring&&!(I.ev||[]).length)t.push(`⚪ 使用中(第 ${days(I.ring.rec.in.slice(0,10),ds)+1} 天)`)}
  if(Lg)t.push('📝 '+[Lg.w?'體重 '+Lg.w+'kg':'',Lg.water?'飲水 '+Lg.water+'ml':'',Lg.sleep?'睡眠 '+Lg.sleep+'h':'',Lg.ex?'運動 '+Lg.ex+'分':'',Lg.mood||''].filter(Boolean).join('・'));
  if(hasF)t.push(`🍽️ 攝取 ${Math.round(fk.kcal)} 大卡`);
  if(pm){const open=S.period.some(x=>!x.e&&x.s<=ds&&days(x.s,ds)<=14);act.push(open?`<button class="s g" onclick="calP('e','${ds}')">🌸 這天結束</button>`:I.per?'':`<button class="s g" onclick="calP('s','${ds}')">🌸 這天開始</button>`);
-  act.push(S.contra.some(x=>!x.out)?`<button class="s g" onclick="calC('out','${ds}')">💊 這天取出</button>`:`<button class="s g" onclick="calC('in','${ds}')">💊 這天放入</button>`)}
+  act.push(S.contra.some(x=>!x.out)?`<button class="s g" onclick="calC('out','${ds}')">⚪ 這天取出</button>`:`<button class="s g" onclick="calC('in','${ds}')">⚪ 這天放入</button>`)}
  act.push(`<button class="s g" onclick="editLog('${ds}')">📝 體重等</button>`,`<button class="s g" onclick="FD='${ds}';render();toast('已切換到 ${md} 的飲食')">🍽️ 飲食</button>`);
  return `<div class="bub" style="margin-top:8px"><b>${md}</b>${t.length?'<br>'+t.join('<br>'):'<br>這天沒有紀錄'}<div class="row" style="margin-top:8px">${act.join('')}</div></div>`}
 function calCard(){const Lc=S.cfg.cal||{},pm=S.cfg.mods.period,[y,m]=CM.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)).getUTCDay(),n=dim(y,m),P=pstat(),cells=[];
@@ -279,7 +279,7 @@ function calCard(){const Lc=S.cfg.cal||{},pm=S.cfg.mods.period,[y,m]=CM.split('-
  const ch=(k,l)=>`<span class="chip ${Lc[k]?'on':''}" style="font-size:12px;padding:3px 9px" onclick="S.cfg.cal=S.cfg.cal||{};S.cfg.cal['${k}']=${Lc[k]?0:1};save();render()">${l}</span>`,
  lg=(pm?`<span style="color:var(--ac)">▬</span> 生理期 <span style="color:var(--ac);opacity:.5">▬</span> 預測 <span style="color:${RING}">━</span> 使用中 <span style="color:${RING}">●</span> 放入 <span style="color:${OUTC}">●</span> 取出 <span style="color:${OUTC}">○</span> 預計取出 ・ `:'')+'灰點=有健康紀錄';
  return `<div class="card"><div class="row sp"><h2 style="margin:0">📅 月曆</h2><span class="row" style="gap:6px"><button class="s g" onclick="CM=addM(CM,-1);render()">◀</button><b>${y} 年 ${m} 月</b><button class="s g" onclick="CM=addM(CM,1);render()">▶</button></span></div>
- <div class="row" style="margin:8px 0">${pm?ch('period','🌸 生理期')+ch('predict','預測')+ch('contra','💊 避孕環'):''}${ch('log','📝 紀錄')}${ch('food','🍽️ 飲食')}</div>
+ <div class="row" style="margin:8px 0">${pm?ch('period','🌸 生理期')+ch('predict','預測')+ch('contra','⚪'):''}${ch('log','📝 紀錄')}${ch('food','🍽️ 飲食')}</div>
  <div class="cal">${DOW.map(x=>`<div class="cw">${x}</div>`).join('')}${cells.join('')}</div><div class="mu" style="margin-top:6px">${lg}・點日期看詳情</div>${CD?dayPanel(CD,P):''}</div>`}
 function editLog(d){if(!$('h_d'))return toast('請先到「調整版面」顯示「今日記錄」');const r=S.log.find(x=>x.d===d)||{};ELG=d;$('h_d').value=d;$('h_w').value=r.w??'';$('h_wa').value=r.water??'';$('h_s').value=r.sleep??'';$('h_e').value=r.ex??'';$('h_m').value=r.mood||'';$('h_w').scrollIntoView({behavior:'smooth',block:'center'});toast('已載入,修改後按儲存')}
 function goalCard(){const g=S.cfg.goal,f=+g.from,t=+g.to;if(!(f&&t))return'<div class="mu" style="margin-top:8px">填入目前與目標體重,我會幫你看看節奏 (・ω・)</div>';
@@ -367,19 +367,20 @@ const FDB=`飯|白飯|米飯,280,5,62,0.5
 const FD0=FDB.split('\n').flatMap(l=>{const[p,k,a,b,c]=l.split(','),al=p.split('|');return al.map(n=>({n,d:al[0],kcal:+k,p:+a,c:+b,f:+c}))}).sort((x,y)=>y.n.length-x.n.length);
 const MEALS={早餐:'早餐',早上:'早餐',午餐:'午餐',中午:'午餐',晚餐:'晚餐',晚上:'晚餐',宵夜:'宵夜',點心:'點心',下午茶:'點心'},CN={一:1,二:2,兩:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10,半:.5};
 const UNIT='個|份|碗|杯|片|顆|塊|隻|條|盤|包|罐|瓶|根|串|口|碟|貫',CLEAN=/^(?:今天|早餐|午餐|晚餐|宵夜|點心|下午茶|早上|中午|晚上|吃了|吃|喝了|喝|我|有)+/,FILL=/吃了|喝了|吃|喝|今天|我|有|了|還有|然後|一些|一點|大概|差不多|的|和|跟|及|與|配|加|幾口|昨天/g;
-function parseFood(txt){let t=txt.replace(new RegExp('([一二兩三四五六七八九十半])(?=\\s*(?:'+UNIT+'))','g'),c=>CN[c]);const ex=[];
+const allFood=()=>S.myfoods.map(x=>({n:x.name,d:x.name,kcal:+x.kcal,p:+x.p||0,c:+x.c||0,f:+x.f||0})).concat(FD0).sort((a,b)=>b.n.length-a.n.length);
+function parseFood(txt){const FX=allFood();let t=txt.replace(new RegExp('([一二兩三四五六七八九十半])(?=\\s*(?:'+UNIT+'))','g'),c=>CN[c]);const ex=[];
  t=t.replace(/([\u4e00-\u9fa5A-Za-z]{1,12}?)\s*[:：]?\s*(\d{2,4})\s*(?:大卡|kcal|卡|cal)/gi,(a,n,k)=>{n=n.replace(CLEAN,'');if(n)ex.push({name:n,q:1,kcal:+k,p:0,c:0,f:0});return '|'});
- const h=new Date().getHours();let meal=h<10?'早餐':h<14?'午餐':h<17?'點心':h<21?'晚餐':'宵夜',last=null,pq=null;const m0=meal,items=[],cov=Array(t.length).fill(0),re=new RegExp('('+Object.keys(MEALS).join('|')+')|('+FD0.map(x=>x.n).join('|')+')|(\\d+(?:\\.\\d+)?)\\s*(?:'+UNIT+')?','g');let m;
+ const h=new Date().getHours();let meal=h<10?'早餐':h<14?'午餐':h<17?'點心':h<21?'晚餐':'宵夜',last=null,pq=null;const m0=meal,items=[],cov=Array(t.length).fill(0),re=new RegExp('('+Object.keys(MEALS).join('|')+')|('+FX.map(x=>x.n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')|(\\d+(?:\\.\\d+)?)\\s*(?:'+UNIT+')?','g');let m;
  while((m=re.exec(t))){for(let i=m.index;i<m.index+m[0].length;i++)cov[i]=1;if(m[1]){meal=MEALS[m[1]];continue}
   const s0=m.index,en=s0+m[0].length;
-  if(m[2]){const f=FD0.find(x=>x.n===m[2]),it={f,q:1,meal,qs:0,e:en};if(pq&&s0-pq.e<=1){it.q=pq.v;it.qs=1}pq=null;items.push(it);last=it;continue}
+  if(m[2]){const f=FX.find(x=>x.n===m[2]),it={f,q:1,meal,qs:0,e:en};if(pq&&s0-pq.e<=1){it.q=pq.v;it.qs=1}pq=null;items.push(it);last=it;continue}
   const q=+m[3];if(last&&!last.qs&&s0-last.e<=1){last.q=q;last.qs=1}else pq={v:q,e:en}}
  const left=t.split('').map((c,i)=>cov[i]?'|':c).join('').replace(FILL,'|').split(/[^\u4e00-\u9fa5A-Za-z]+/).filter(x=>x.length>=2);
  return{items:items.map(x=>({name:x.f.d,q:x.q,kcal:Math.round(x.f.kcal*x.q),p:+(x.f.p*x.q).toFixed(1),c:+(x.f.c*x.q).toFixed(1),f:+(x.f.f*x.q).toFixed(1),meal:x.meal})),ex:ex.map(x=>({...x,meal:m0})),unk:left}}
 let FD=td();const addDay=(d,n)=>new Date(new Date(d).getTime()+n*864e5).toISOString().slice(0,10);
 function sendFood(){const tx=v('f_in').trim();if(!tx)return;const P=parseFood(tx),g=uid(),t0=Date.now();let n=0;
  const add=o=>{S.food.push({id:uid(),d:FD,g,t:t0+n,...(n===0?{msg:tx}:{}),...o});n++};
- P.ex.forEach(o=>{S.food=S.food.filter(x=>!(x.u&&x.d===FD&&x.name===o.name));add(o)});
+ P.ex.forEach(o=>{S.food=S.food.filter(x=>!(x.u&&x.d===FD&&x.name===o.name));const j=S.myfoods.findIndex(x=>x.name===o.name);if(j>=0)S.myfoods[j].kcal=o.kcal;else S.myfoods.push({id:uid(),name:o.name,kcal:o.kcal,p:0,c:0,f:0});add({...o,saved:1})});
  P.items.forEach(add);P.unk.forEach(name=>add({name,q:1,kcal:0,p:0,c:0,f:0,meal:'',u:1}));
  if(!n)add({none:1});save();render();setTimeout(()=>{const x=$('f_in');x&&x.focus()},30)}
 function delFood(id){if(!confirm('確定刪除這筆飲食紀錄?'))return;S.food=S.food.filter(x=>x.id!==id);save();render()}
@@ -388,7 +389,7 @@ function foodSum(d){const s={kcal:0,p:0,c:0,f:0};S.food.filter(x=>x.d===d&&!x.no
 function prof(){const P=S.cfg.prof,W=lg().filter(x=>x.w),w=W.length?W[W.length-1].w:+S.cfg.goal.from||0;if(!(+P.age&&+P.h&&w))return null;const bmr=10*w+6.25*P.h-5*P.age+(P.sex==='m'?5:-161);return{w,bmr,tdee:bmr*(+P.act||1.375)}}
 function foodChat(){const G={};S.food.filter(x=>x.d===FD).sort((a,b)=>a.t-b.t).forEach(x=>(G[x.g]=G[x.g]||[]).push(x));
  return Object.values(G).map(g=>{const msg=(g.find(x=>x.msg)||{}).msg||'',F=g.filter(x=>!x.none&&!x.u),U=g.filter(x=>x.u),sum=F.reduce((a,x)=>a+x.kcal,0);
-  return `<div style="display:flex;justify-content:flex-end;margin:8px 0"><div class="bub" style="background:var(--ac);color:#fff;max-width:85%">${e(msg)}</div></div><div style="margin:8px 0"><div class="bub" style="max-width:92%">${F.length?'記下來了 (๑>◡<๑)<br>':''}${F.map(x=>`${x.meal||''} ${e(x.name)}${x.q!==1?'×'+x.q:''} — ${x.kcal} 大卡 <a class="mu" onclick="delFood('${x.id}')">✕</a>`).join('<br>')}${F.length?`<br><b>這次共 ${sum} 大卡</b>`:''}${U.map(x=>`<br>「${e(x.name)}」我還不認識,告訴我大概幾大卡吧,像是「${e(x.name)} 300大卡」 <a class="mu" onclick="delFood('${x.id}')">✕</a>`).join('')}${!F.length&&!U.length?`我還不認識這些食物 (´・ω・\`)<br>可以直接說「名稱 300大卡」,我就會記下來 <a class="mu" onclick="delFood('${g[0].id}')">✕</a>`:''}</div></div>`}).join('')}
+  return `<div style="display:flex;justify-content:flex-end;margin:8px 0"><div class="bub" style="background:var(--ac);color:#fff;max-width:85%">${e(msg)}</div></div><div style="margin:8px 0"><div class="bub" style="max-width:92%">${F.length?'記下來了 (๑>◡<๑)<br>':''}${F.map(x=>`${x.meal||''} ${e(x.name)}${x.q!==1?'×'+x.q:''} — ${x.kcal} 大卡${x.saved?' (已存起來,下次說名稱就會自動帶入)':''} <a class="mu" onclick="delFood('${x.id}')">✕</a>`).join('<br>')}${F.length?`<br><b>這次共 ${sum} 大卡</b>`:''}${U.map(x=>`<br>「${e(x.name)}」我還不認識,告訴我大概幾大卡吧,像是「${e(x.name)} 300大卡」 <a class="mu" onclick="delFood('${x.id}')">✕</a>`).join('')}${!F.length&&!U.length?`我還不認識這些食物 (´・ω・\`)<br>可以直接說「名稱 300大卡」,我就會記下來 <a class="mu" onclick="delFood('${g[0].id}')">✕</a>`:''}</div></div>`}).join('')}
 function foodCard(){const s=foodSum(FD),pr=prof(),lg0=S.log.find(x=>x.d===FD)||{},has=S.food.some(x=>x.d===FD&&!x.none&&!x.u),late=FD<td()||new Date().getHours()>=20,m=[];
  if(!has)return'<div class="mu" style="margin-top:6px">還沒有記錄飲食,隨時跟我說你吃了什麼 (੭ˊᵕˋ)੭</div>';
  let h=`<div class="row sp"><span>今日攝取</span><b>${Math.round(s.kcal)} 大卡</b></div>`;
@@ -405,7 +406,7 @@ function foodSection(){const P=S.cfg.prof,o=(a,b,l)=>`<option value="${a}" ${b==
  <div style="max-height:340px;overflow:auto;margin:8px 0">${foodChat()||'<div class="bub">這天吃了什麼呢?直接告訴我就好,像是「早餐蛋餅加豆漿,午餐雞腿便當」 (๑>◡<๑)</div>'}</div>
  <div class="row" style="flex-wrap:nowrap"><input id="f_in" placeholder="早餐吃了蛋餅和豆漿…" onkeydown="if(event.key==='Enter')sendFood()"><button onclick="sendFood()">送出</button></div>
  <div class="mu" style="margin-top:4px">不認識的食物可以這樣說:「麻辣燙 500大卡」</div>${foodCard()}
- <details style="margin-top:8px"><summary>基本資料(用來算熱量)</summary><div class="row"><select id="p_sex">${o('f',P.sex,'女')}${o('m',P.sex,'男')}</select><input id="p_age" type="number" placeholder="年齡" value="${e(P.age)}"><input id="p_h" type="number" placeholder="身高 cm" value="${e(P.h)}"></div>
+ ${myFoodBox()}<details style="margin-top:8px"><summary>基本資料(用來算熱量)</summary><div class="row"><select id="p_sex">${o('f',P.sex,'女')}${o('m',P.sex,'男')}</select><input id="p_age" type="number" placeholder="年齡" value="${e(P.age)}"><input id="p_h" type="number" placeholder="身高 cm" value="${e(P.h)}"></div>
  <select id="p_act" style="margin-top:8px;width:100%">${o('1.2',P.act,'久坐(少運動)')}${o('1.375',P.act,'輕度活動(每週運動 1–3 天)')}${o('1.55',P.act,'中度活動(每週運動 3–5 天)')}${o('1.725',P.act,'高度活動(幾乎每天運動)')}</select><button class="s" style="margin-top:8px" onclick="saveProf()">儲存</button></details></div>`}
 let PED=null,RED=null;const DOW=['日','一','二','三','四','五','六'];
 function pstat(){const L=S.period.filter(x=>x.s).sort((a,b)=>a.s<b.s?-1:1),st=L.map(x=>x.s),cy=[];for(let i=1;i<st.length;i++){const n=days(st[i-1],st[i]);if(n>=15&&n<=60)cy.push(n)}
@@ -453,29 +454,35 @@ function saveC(){const o={type:v('ct_t'),in:v('ct_i'),out:v('ct_o'),plan:v('ct_p
  if(!o.plan&&!o.out&&o.type==='避孕環')o.plan=addDay(o.in.slice(0,10),+S.cfg.contraWear||21);if(CED)Object.assign(S.contra.find(x=>x.id===CED),o);else S.contra.push({id:uid(),...o});CED=null;save();render();toast('已儲存 ✅')}
 function saveCSet(){S.cfg.contraWear=Math.min(60,Math.max(7,+v('cs_w')||21));S.cfg.contraGap=Math.min(30,Math.max(1,+v('cs_g')||7));S.cfg.contraRemind=$('cs_r').checked;save();render();toast('已儲存')}
 function contraCard(){if(!S.cfg.mods.period)return'';
- const L=S.contra.slice().sort((a,b)=>a.in<b.in?1:-1),cur=L.find(x=>!x.out),last=L.find(x=>x.out),T=['避孕環','避孕棒','子宮內避孕器','其他'],md=d=>d.slice(5,10).replace('-','/'),
+ const L=S.contra.slice().sort((a,b)=>a.in<b.in?1:-1),cur=L.find(x=>!x.out),last=L.find(x=>x.out),T=['避孕環','其他'],TL={'避孕環':'⚪ 週期型(自動推算取出/放入日)','其他':'⚪ 一般(不自動推算)'},md=d=>d.slice(5,10).replace('-','/'),
  x0=S.contra.find(x=>x.id===CED)||{type:S.cfg.contraType||'避孕環',in:nowL(),out:'',plan:'',note:''},ni=last&&!cur&&last.type==='避孕環'?addDay(last.out.slice(0,10),+S.cfg.contraGap||7):'',
  dl=d=>{const n=days(td(),d);return n>0?n+' 天後':n===0?'就是今天':'已超過 '+(-n)+' 天'},o=(a,b,l)=>`<option value="${a}" ${b===a?'selected':''}>${l}</option>`;
- return `<div class="card"><h2>💊 避孕環/避孕器紀錄</h2><div class="bub">${cur?`使用中:${e(cur.type)},已放入 ${days(cur.in.slice(0,10),td())+1} 天(${fdt(cur.in)} 放入)${cur.plan?`<br>預計 ${md(cur.plan)} 取出(${dl(cur.plan)})`:''}`:last?`目前已取出(${fdt(last.out)})${ni?`<br>預計 ${md(ni)} 放入新的(${dl(ni)})`:''}`:'還沒有紀錄,放入時按一下「現在放入」就好 (੭ˊᵕˋ)੭'}</div>
- <div class="row" style="margin-top:8px">${cur?`<button onclick="outC('${cur.id}')">現在取出</button>`:`<select id="ct_q">${T.map(t=>o(t,S.cfg.contraType||'避孕環',t)).join('')}</select><button onclick="inC()">現在放入</button>`}</div>
- ${L.slice(0,10).map(x=>`<div class="li"><span>${e(x.type)} ${fdt(x.in)} → ${x.out?fdt(x.out)+`(${days(x.in.slice(0,10),x.out.slice(0,10))} 天)`:'使用中'} <span class="mu">${e(x.note)}</span></span><span style="white-space:nowrap"><a class="mu" onclick="editC('${x.id}')">✏️</a> <a class="mu" onclick="delC('${x.id}')">✕</a></span></div>`).join('')}
- <details ${CED?'open':''} style="margin-top:6px"><summary>新增/修改紀錄</summary><div id="cf"><div class="row"><select id="ct_t">${T.map(t=>o(t,x0.type,t)).join('')}</select></div>
+ return `<div class="card"><h2>⚪</h2><div class="bub">${cur?`⚪ 使用中,已放入 ${days(cur.in.slice(0,10),td())+1} 天(${fdt(cur.in)} 放入)${cur.plan?`<br>預計 ${md(cur.plan)} 取出(${dl(cur.plan)})`:''}`:last?`目前已取出(${fdt(last.out)})${ni?`<br>預計 ${md(ni)} 放入新的(${dl(ni)})`:''}`:'還沒有紀錄,放入時按一下「現在放入」就好 (੭ˊᵕˋ)੭'}</div>
+ <div class="row" style="margin-top:8px">${cur?`<button onclick="outC('${cur.id}')">現在取出</button>`:`<select id="ct_q">${T.map(t=>o(t,S.cfg.contraType||'避孕環',TL[t]||'⚪ 一般(不自動推算)')).join('')}</select><button onclick="inC()">現在放入</button>`}</div>
+ ${L.slice(0,10).map(x=>`<div class="li"><span>⚪ ${fdt(x.in)} → ${x.out?fdt(x.out)+`(${days(x.in.slice(0,10),x.out.slice(0,10))} 天)`:'使用中'} <span class="mu">${e(x.note)}</span></span><span style="white-space:nowrap"><a class="mu" onclick="editC('${x.id}')">✏️</a> <a class="mu" onclick="delC('${x.id}')">✕</a></span></div>`).join('')}
+ <details ${CED?'open':''} style="margin-top:6px"><summary>新增/修改紀錄</summary><div id="cf"><div class="row"><select id="ct_t">${T.map(t=>o(t,x0.type,TL[t]||'⚪ 一般(不自動推算)')).join('')}</select></div>
  <div class="row" style="margin-top:6px"><label class="mu" style="flex:1 1 150px;display:block">放入時間<input id="ct_i" type="datetime-local" style="width:100%" value="${x0.in}"></label><label class="mu" style="flex:1 1 150px;display:block">取出時間(可不填)<input id="ct_o" type="datetime-local" style="width:100%" value="${x0.out}"></label></div>
  <div class="row" style="margin-top:6px"><label class="mu" style="flex:1 1 150px;display:block">預計取出日(可不填)<input id="ct_p" type="date" style="width:100%" value="${x0.plan}"></label><input id="ct_n" placeholder="備註" value="${e(x0.note)}"></div>
  <div class="row" style="margin-top:8px"><button class="s" onclick="saveC()">${CED?'儲存修改':'新增'}</button>${CED?'<button class="s g" onclick="CED=null;render()">取消</button>':''}</div></div></details>
- <details><summary>提醒設定</summary><div class="row" style="margin-top:6px"><label class="mu" style="flex:1 1 130px;display:block">避孕環戴幾天<input id="cs_w" type="number" style="width:100%" value="${S.cfg.contraWear}"></label><label class="mu" style="flex:1 1 130px;display:block">取出後隔幾天再放<input id="cs_g" type="number" style="width:100%" value="${S.cfg.contraGap}"></label></div>
+ <details><summary>提醒設定</summary><div class="row" style="margin-top:6px"><label class="mu" style="flex:1 1 130px;display:block">戴幾天<input id="cs_w" type="number" style="width:100%" value="${S.cfg.contraWear}"></label><label class="mu" style="flex:1 1 130px;display:block">取出後隔幾天再放<input id="cs_g" type="number" style="width:100%" value="${S.cfg.contraGap}"></label></div>
  <label class="li"><span>用 Telegram 提醒</span><input id="cs_r" type="checkbox" style="flex:none" ${S.cfg.contraRemind!==false?'checked':''}></label><div class="mu">在每日提醒時間發送:預計取出前一天與當天、預計重新放入當天。預設值是常見的「戴 3 週、停 1 週」,實際請依醫師或藥品說明書。</div><button class="s" style="margin-top:6px" onclick="saveCSet()">儲存</button></details>
  <div class="mu" style="margin-top:6px">只有你看得到。這裡是記錄與提醒用途,使用方式請依醫師指示。</div></div>`}
+function addMyFood(){const n=v('mf_n').trim(),k=+v('mf_k');if(!n||!k)return toast('請填食物名稱和大卡');const o={name:n,kcal:k,p:+v('mf_p')||0,c:+v('mf_c')||0,f:+v('mf_f')||0},j=S.myfoods.findIndex(x=>x.name===n);
+ if(j>=0)Object.assign(S.myfoods[j],o);else S.myfoods.push({id:uid(),...o});save();render();toast('已存起來 ✅')}
+function delMyFood(id){const x=S.myfoods.find(z=>z.id===id);if(x&&confirm('確定刪除「'+x.name+'」?')){S.myfoods=S.myfoods.filter(z=>z.id!==id);save();render()}}
+function editMyFood(id){const x=S.myfoods.find(z=>z.id===id);if(!x)return;$('mf_n').value=x.name;$('mf_k').value=x.kcal;$('mf_p').value=x.p||'';$('mf_c').value=x.c||'';$('mf_f').value=x.f||'';toast('已載入,修改後按儲存')}
+const myFoodBox=()=>`<details id="mf_box" style="margin-top:8px"><summary>我的食物(已存 ${S.myfoods.length} 項)</summary><div class="mu" style="margin:4px 0">傳「麻辣燙 500大卡」會自動存起來,之後只要說「麻辣燙」就會帶入(以一份計算)。也可以在這裡新增或修改。</div>${S.myfoods.map(x=>`<div class="li"><span>${e(x.name)} <span class="mu">${x.kcal} 大卡${x.p||x.c||x.f?`・蛋${x.p}/碳${x.c}/脂${x.f}`:''}</span></span><span style="white-space:nowrap"><a class="mu" onclick="editMyFood('${x.id}')">✏️</a> <a class="mu" onclick="delMyFood('${x.id}')">✕</a></span></div>`).join('')}
+ <div class="row" style="margin-top:8px"><input id="mf_n" placeholder="食物名稱"><input id="mf_k" type="number" placeholder="大卡" style="flex:0 0 80px"></div><div class="row" style="margin-top:6px"><input id="mf_p" type="number" placeholder="蛋白質g"><input id="mf_c" type="number" placeholder="碳水g"><input id="mf_f" type="number" placeholder="脂肪g"></div><button class="s" style="margin-top:8px" onclick="addMyFood()">儲存</button></details>`;
 /* ---------- cloud sync ---------- */
 const mas=z=>['hamster','sheep'].includes(S.cfg.mascot)?`<img src="mascot-${S.cfg.mascot}.webp" alt="" style="width:${z}px;height:${z}px;border-radius:50%;vertical-align:middle">`:S.cfg.mascot;
 const hs=o=>{const t=JSON.stringify(o);let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))>>>0;return h};
 async function api(path,body){const y=S.sync,r=await fetch(y.api.replace(/\/$/,'')+path,{method:body?'POST':'GET',headers:{'content-type':'application/json',authorization:'Bearer '+y.token},body:body?JSON.stringify(body):undefined});
  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);return r.json()}
-const docs=()=>{const c={};S.tx.forEach(t=>c['tx:'+t.id]={scope:t.scope,data:t});S.items.forEach(i=>c['item:'+i.id]={scope:'s',data:i});S.log.forEach(l=>c['log:'+l.d]={scope:'p',data:l});S.loans.forEach(l=>c['loan:'+l.id]={scope:'p',data:l});S.food.forEach(x=>c['food:'+x.id]={scope:'p',data:x});S.period.forEach(x=>c['period:'+x.id]={scope:'p',data:x});S.rems.forEach(x=>c['rem:'+x.id]={scope:'p',data:x});S.contra.forEach(x=>c['contra:'+x.id]={scope:'p',data:x});c.cfg={scope:'p',data:{cfg:S.cfg,mem:S.mem,cats:S.cats,cards:S.cards}};return c};
+const docs=()=>{const c={};S.tx.forEach(t=>c['tx:'+t.id]={scope:t.scope,data:t});S.items.forEach(i=>c['item:'+i.id]={scope:'s',data:i});S.log.forEach(l=>c['log:'+l.d]={scope:'p',data:l});S.loans.forEach(l=>c['loan:'+l.id]={scope:'p',data:l});S.food.forEach(x=>c['food:'+x.id]={scope:'p',data:x});S.period.forEach(x=>c['period:'+x.id]={scope:'p',data:x});S.rems.forEach(x=>c['rem:'+x.id]={scope:'p',data:x});S.contra.forEach(x=>c['contra:'+x.id]={scope:'p',data:x});S.myfoods.forEach(x=>c['myfood:'+x.id]={scope:'p',data:x});c.cfg={scope:'p',data:{cfg:S.cfg,mem:S.mem,cats:S.cats,cards:S.cards}};return c};
 function ap(res,y){let n=0;const c=docs(),ks=[];
  for(const d of res.docs){const k=d.k,i=k.indexOf(':'),t=k.slice(0,i),id=k.slice(i+1);
   if(k==='cfg'){if(!d.del){if(hs(d.data)!==hs(c.cfg.data)){Object.assign(S.cfg,d.data.cfg);S.mem=d.data.mem;S.cats=d.data.cats;S.cats.loc=S.cats.loc||DEFLOC();if(d.data.cards)S.cards=d.data.cards;n++}ks.push(k)}continue}
-  const L={tx:S.tx,item:S.items,log:S.log,loan:S.loans,food:S.food,period:S.period,rem:S.rems,contra:S.contra}[t];if(!L)continue;const f=t==='log'?'d':'id',j=L.findIndex(x=>x[f]===id);
+  const L={tx:S.tx,item:S.items,log:S.log,loan:S.loans,food:S.food,period:S.period,rem:S.rems,contra:S.contra,myfood:S.myfoods}[t];if(!L)continue;const f=t==='log'?'d':'id',j=L.findIndex(x=>x[f]===id);
   if(d.del){if(j>=0){L.splice(j,1);n++}delete y.h[k]}
   else if(j<0){L.push(d.data);n++;ks.push(k)}
   else{if(hs(d.data)!==hs(L[j])){L[j]=d.data;n++}ks.push(k)}}
